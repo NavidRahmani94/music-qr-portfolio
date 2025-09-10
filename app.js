@@ -1,39 +1,29 @@
 /********** فقط این را عوض کن **********/
-const FILENAME = logo M.mp4"; // ← دقیقا اسم ویدیویی که آپلود کردی (مثلا "track1.mp4")
+const FILENAME = "logo M.MP4"; // ← دقیقا اسم ویدیویی که آپلود کردی (مثلا "track1.mp4")
 /****************************************/
 
-/* base برای GitHub Pages */
 function getBasePath(){
   const parts = location.pathname.split("/").filter(Boolean);
   return parts.length ? `/${parts[0]}` : "";
 }
 const BASE = getBasePath();
 
-/* یک آیتم ویدیو با پلیر داخلی + QR */
 const VIDEOS = [
   {
-    slug: FILENAME.replace(/\.[^/.]+$/, ""),      // مثلا "track1"
+    slug: FILENAME.replace(/\.[^/.]+$/, ""),
     title: `Local • ${FILENAME}`,
-    url: `${BASE}/assets/videos/logo M.mp4`,
-    thumbnail: `${BASE}/assets/thumbs/${FILENAME.replace(/\.[^/.]+$/, ".jpg")}`, // اختیاری
+    url: `${BASE}/assets/videos/logo M.MP4`,
+    thumbnail: `${BASE}/assets/thumbs/${FILENAME.replace(/\.[^/.]+$/, ".jpg")}`,
     tags: ["local"]
   }
 ];
 
-/* DOM */
 const grid = document.getElementById("grid");
 const empty = document.getElementById("empty");
 const search = document.getElementById("search");
 const copyBtn = document.getElementById("copy");
 const printBtn = document.getElementById("print");
 
-/* دیباگ روی صفحه */
-const dbg = document.createElement("pre");
-dbg.style.cssText = "font:12px/1.4 ui-monospace,monospace; background:#fff; border:1px solid #eee; padding:8px; margin:8px 0; white-space:pre-wrap;";
-dbg.textContent = `BASE=${BASE}\nVideo URL=${VIDEOS[0].url}\nPage URL=${location.href}`;
-document.querySelector("main").prepend(dbg);
-
-/* رندر */
 let filtered = [...VIDEOS];
 render();
 
@@ -44,6 +34,24 @@ search.addEventListener("input", (e)=>{
 });
 copyBtn.addEventListener("click", ()=> navigator.clipboard.writeText(location.href));
 printBtn.addEventListener("click", ()=> window.print());
+
+/* === تولید QR به صورت <img> قابل دانلود === */
+function makeQRImage(url, size=148){
+  // یک div موقت می‌سازیم، بعد خروجی canvas/img را به <img> تبدیل می‌کنیم
+  const tmp = document.createElement("div");
+  new QRCode(tmp, { text: url, width: size, height: size }); // نیاز به qrcode.min.js
+  // گاهی خروجی <img> و گاهی <canvas> است:
+  let imgEl = tmp.querySelector("img");
+  if (!imgEl) {
+    const canvas = tmp.querySelector("canvas");
+    const dataURL = canvas.toDataURL("image/png");
+    imgEl = new Image();
+    imgEl.src = dataURL;
+  }
+  imgEl.width = size; imgEl.height = size;
+  imgEl.className = "rounded border";
+  return imgEl;
+}
 
 function render(){
   grid.innerHTML = "";
@@ -62,44 +70,59 @@ function render(){
         مرورگر شما از ویدیو پشتیبانی نمی‌کند.
       </video>`;
 
+    // بدنه
     const body = document.createElement("div");
-    body.className = "p-4";
+    body.className = "p-4 flex-1 flex flex-col";
     body.innerHTML = `
       <div class="font-semibold text-base leading-tight">${esc(v.title)}</div>
       <div class="mt-1 flex flex-wrap gap-1">${(v.tags||[]).map(t=>`<span class="text-[10px] px-2 py-0.5 rounded bg-black/70 text-white">${esc(t)}</span>`).join("")}</div>
-      <div class="mt-3 flex items-center gap-2">
-        <a class="px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90" href="${v.url}" target="_blank" rel="noreferrer">Open</a>
-        <button class="px-3 py-2 rounded border text-sm hover:bg-neutral-100" data-copy="${v.url}">Copy Link</button>
-        <button class="px-3 py-2 rounded text-sm hover:bg-neutral-100" data-toggle-qr>Show QR</button>
-      </div>
-      <div class="mt-4 p-3 bg-neutral-50 border rounded-xl hidden items-center justify-center" id="qrbox"></div>
     `;
 
-    const qrBtn = body.querySelector("[data-toggle-qr]");
-    const copyBtn = body.querySelector("[data-copy]");
-    const qrBox  = body.querySelector("#qrbox");
+    // QR ثابت + دکمه دانلود
+    const qrRow = document.createElement("div");
+    qrRow.className = "mt-4 flex items-center gap-3";
+    const qrImg = makeQRImage(v.url, 148);
+    const actions = document.createElement("div");
+    actions.className = "flex flex-col gap-2";
 
-    copyBtn.onclick = ()=> navigator.clipboard.writeText(v.url);
-    qrBtn.onclick = ()=>{
-      const hidden = qrBox.classList.toggle("hidden");
-      qrBtn.textContent = hidden ? "Show QR" : "Hide QR";
-      if (!hidden && !qrBox.dataset.ready) {
-        new QRCode(qrBox, { text: v.url, width: 148, height: 148 });
-        qrBox.dataset.ready = "1";
-      }
-    };
+    const open = document.createElement("a");
+    open.className = "px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90 inline-block";
+    open.href = v.url; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
+
+    const copy = document.createElement("button");
+    copy.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100";
+    copy.textContent = "Copy Link";
+    copy.onclick = ()=> navigator.clipboard.writeText(v.url);
+
+    const download = document.createElement("a");
+    download.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100 inline-block";
+    download.textContent = "Download QR";
+    // اگر qrImg از <canvas> ساخته شده بود، الان <img> با dataURL داریم؛ اگر src مطلق بود، تبدیلش می‌کنیم
+    download.href = qrImg.src.startsWith("data:") ? qrImg.src : toDataURL(qrImg);
+    download.download = `${v.slug}-qr.png`;
+
+    actions.appendChild(open);
+    actions.appendChild(copy);
+    actions.appendChild(download);
+
+    qrRow.appendChild(qrImg);
+    qrRow.appendChild(actions);
+
+    body.appendChild(qrRow);
 
     card.appendChild(mediaWrap);
     card.appendChild(body);
     grid.appendChild(card);
   });
+}
 
-  // یک QR تستی برای خود صفحه (برای اطمینان از لود شدن کتابخانه QR)
-  const test = document.createElement("div");
-  test.className = "p-4 bg-white border rounded-xl mt-4";
-  test.innerHTML = `<div class="text-sm mb-2">Test QR (Home URL):</div><div id="qrtest"></div>`;
-  document.querySelector("main").appendChild(test);
-  new QRCode(document.getElementById("qrtest"), { text: location.href, width: 96, height: 96 });
+// اگر به هر دلیلی qrImg.src dataURL نبود، تبدیلش می‌کنیم
+function toDataURL(img){
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width; canvas.height = img.height;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  return canvas.toDataURL("image/png");
 }
 
 function esc(s){ return (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
