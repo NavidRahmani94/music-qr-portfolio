@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Music • Video Portfolio + QR</title>
+
+  <!-- TailwindCSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- QRCode.js (بدون وابستگی) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <style>
+    /* برای چاپ QR-only فضای سفید بهتر */
+    @media print {
+      #cardsView { display: none !important; }
+      #qrView { display: grid !important; }
+    }
+  </style>
+</head>
+<body class="bg-neutral-50 text-neutral-900">
+  <header class="sticky top-0 z-10 backdrop-blur bg-white/70 border-b">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
+      <div class="font-bold text-xl">🎵 Portfolio • Videos & QR</div>
+      <span class="text-xs border rounded px-2 py-0.5 bg-neutral-100">static ver</span>
+      <div class="ml-auto flex items-center gap-2">
+        <input id="searchInput" type="search"
+               placeholder="Search title, platform, tags…"
+               class="w-64 border rounded px-3 py-2 text-sm focus:outline-none focus:ring"
+        />
+        <button id="toggleBtn"
+                class="border rounded px-3 py-2 text-sm hover:bg-neutral-100">
+          Print QR Sheet
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Cards view -->
+  <main id="cardsView" class="max-w-6xl mx-auto px-4 py-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></main>
+
+  <!-- QR-only printable view -->
+  <section id="qrView" class="max-w-6xl mx-auto px-4 py-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 hidden"></section>
+
+  <footer class="border-t bg-white/70">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-xs text-neutral-500 flex items-center justify-between">
+      <div>© <span id="year"></span> • Your Name</div>
+      <div class="flex items-center gap-3">
+        <button id="shareBtn" class="px-2 py-1 rounded hover:bg-neutral-100">Share</button>
+        <button id="copyBtn" class="px-2 py-1 rounded hover:bg-neutral-100">Copy Link</button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
