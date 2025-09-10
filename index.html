@@ -15,7 +15,7 @@
 
   <style>
     @media print { 
-      #controls, #input-form, #log { display: none !important; } 
+      #controls, #input-form, #log, #audio-controls { display: none !important; } 
       #grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       #all-qrs { display: block !important; }
     }
@@ -40,26 +40,40 @@
       animation: spin 1s linear infinite;
       margin-right: 8px;
     }
+    /* افکت فانتزی دکمه پرینت */
+    @keyframes glow { 
+      0% { box-shadow: 0 0 5px rgba(255,255,255,0.5); } 
+      50% { box-shadow: 0 0 20px rgba(255,255,255,0.8); } 
+      100% { box-shadow: 0 0 5px rgba(255,255,255,0.5); } 
+    }
+    .fancy-btn:hover {
+      transform: scale(1.1);
+      animation: glow 1.5s infinite;
+    }
   </style>
 </head>
-<body class="bg-gradient-to-b from-blue-50 to-gray-100 text-neutral-900">
+<body style="background-image: url('https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/146291855-grunge-musical-background-old-paper-texture-music-notes.jpg'); background-size: cover; background-attachment: fixed;">
   <!-- بنر -->
   <header class="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg banner">
-    <div id="controls" class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-      <div class="flex items-center gap-2">
-        <span class="text-2xl font-bold">🎬 Navid Rahmani: Producer Portfolio</span>
-        <span class="text-sm opacity-75">نمونه‌کارهای حرفه‌ای تولید موسیقی</span>
+    <div class="max-w-5xl mx-auto px-4 py-4 relative">
+      <div id="controls" class="flex justify-center items-center gap-3">
+        <div class="flex flex-col items-center gap-1">
+          <span class="text-2xl font-bold">Producer Portfolio</span>
+          <span class="text-xl font-medium">Navid Rahmani</span>
+        </div>
       </div>
-      <div class="ml-auto flex gap-2">
-        <button id="print" class="border border-white/20 rounded px-4 py-2 text-sm hover:bg-white/20 transition">پرینت QR</button>
-        <button id="print-all" class="border border-white/20 rounded px-4 py-2 text-sm hover:bg-white/20 transition">پرینت همه QRها</button>
+      <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
+        <button id="print" class="border border-white/20 rounded px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition fancy-btn flex items-center gap-2">
+          <span>🖨️</span>
+          <span>پرینت QR</span>
+        </button>
       </div>
     </div>
   </header>
 
   <main class="max-w-5xl mx-auto px-4 py-8">
     <!-- فرم برای انتخاب دسته‌بندی و لینک ویدیو -->
-    <div id="input-form" class="mb-6 bg-white p-6 rounded-xl shadow-md animate-slideIn">
+    <div id="input-form" class="mb-6 bg-white/80 p-6 rounded-xl shadow-md animate-slideIn backdrop-blur-sm">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label for="category" class="block text-sm font-medium">دسته‌بندی:</label>
@@ -80,20 +94,26 @@
     </div>
 
     <!-- لاگ برای عیب‌یابی -->
-    <pre id="log" class="mono text-xs bg-white border rounded p-3 mb-4 whitespace-pre-wrap"></pre>
+    <pre id="log" class="mono text-xs bg-white/80 border rounded p-3 mb-4 whitespace-pre-wrap backdrop-blur-sm"></pre>
 
     <!-- کارت -->
-    <div id="card" class="overflow-hidden rounded-2xl shadow-md bg-white border flex flex-col animate-slideIn"></div>
+    <div id="card" class="overflow-hidden rounded-2xl shadow-md bg-white/80 border flex flex-col animate-slideIn backdrop-blur-sm"></div>
 
     <!-- بخش پرینت همه QRها -->
     <div id="all-qrs" class="hidden mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
   </main>
 
-  <footer class="border-t bg-white/70">
+  <footer class="border-t bg-white/70 backdrop-blur-sm">
     <div class="max-w-5xl mx-auto px-4 py-6 text-xs text-neutral-500 flex items-center justify-between">
       <div>© <span id="year"></span> Navid Rahmani: Producer Portfolio</div>
+      <div id="audio-controls" class="flex items-center gap-2">
+        <button id="toggle-audio" class="px-2 py-1 rounded hover:bg-neutral-100">توقف موسیقی</button>
+      </div>
       <button id="copy" class="px-2 py-1 rounded hover:bg-neutral-100">کپی آدرس صفحه</button>
     </div>
+    <audio id="background-audio" autoplay loop>
+      <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/background.mp3" type="audio/mp3">
+    </audio>
   </footer>
 
   <script>
@@ -101,12 +121,32 @@
     const QR_SIZE = 148;
     let VIDEO_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4"; // پیش‌فرض
 
-    // ——— لیست ویدیوها با دسته‌بندی ———
+    // ——— لیست ویدیوها با دسته‌بندی و توضیحات ———
     const videos = [
-      { category: "mix_master", title: "Mix and Master Sample", url: "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4" },
-      { category: "sound_design", title: "Sound Design Demo", url: "https://example.com/sound-design.mp4" },
-      { category: "producer_project", title: "Producer Project 1", url: "https://example.com/producer-project.mp4" },
-      { category: "sound_recording", title: "Sound Recording Session", url: "https://example.com/sound-recording.mp4" }
+      { 
+        category: "mix_master", 
+        title: "Mix and Master Sample", 
+        url: "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4",
+        description: "نمونه‌ای از میکس و مسترینگ حرفه‌ای با کیفیت استودیویی."
+      },
+      { 
+        category: "sound_design", 
+        title: "Sound Design Demo", 
+        url: "https://example.com/sound-design.mp4",
+        description: "طراحی صدا برای پروژه‌های سینمایی و بازی‌های ویدیویی."
+      },
+      { 
+        category: "producer_project", 
+        title: "Producer Project 1", 
+        url: "https://example.com/producer-project.mp4",
+        description: "پروژه تولید موسیقی کامل از ایده تا محصول نهایی."
+      },
+      { 
+        category: "sound_recording", 
+        title: "Sound Recording Session", 
+        url: "https://example.com/sound-recording.mp4",
+        description: "جلسه ضبط صدا با تجهیزات پیشرفته در استودیو."
+      }
     ];
 
     // ——— کمک‌ها ———
@@ -156,17 +196,37 @@
     document.getElementById("print").onclick = () => window.print();
     document.getElementById("copy").onclick = () => navigator.clipboard.writeText(location.href);
 
+    // ——— کنترل موسیقی پس‌زمینه ———
+    const audio = document.getElementById("background-audio");
+    const toggleAudioBtn = document.getElementById("toggle-audio");
+    audio.volume = 0.2; // صدای کم برای پس‌زمینه
+    toggleAudioBtn.onclick = () => {
+      if (audio.paused) {
+        audio.play();
+        toggleAudioBtn.textContent = "توقف موسیقی";
+      } else {
+        audio.pause();
+        toggleAudioBtn.textContent = "شروع موسیقی";
+      }
+    };
+
     // ——— تابع برای به‌روزرسانی کارت ———
-    function updateCard(videoUrl, title = "ویدیو") {
+    function updateCard(videoUrl, title = "ویدیو", description = "") {
       const card = document.getElementById("card");
       card.innerHTML = ""; // پاک کردن محتوای قبلی
+
+      // ——— نام ویدیو ———
+      const titleDiv = document.createElement("div");
+      titleDiv.className = "text-center font-semibold text-xl py-4 bg-gray-50/80";
+      titleDiv.textContent = title;
+      card.appendChild(titleDiv);
 
       // ——— ویدیو ———
       const media = document.createElement("div");
       const vid = document.createElement("video");
       vid.controls = true;
       vid.preload = "metadata";
-      vid.className = "w-full h-80 object-contain bg-black rounded-t-2xl";
+      vid.className = "w-full h-80 object-contain bg-black";
       const src = document.createElement("source");
       src.src = videoUrl; src.type = "video/mp4";
       vid.appendChild(src);
@@ -188,10 +248,10 @@
       const body = document.createElement("div");
       body.className = "p-6";
       body.innerHTML = `
-        <div class="font-semibold text-lg">${title}</div>
         <div class="mt-2 text-sm text-neutral-600 break-all">
           لینک مستقیم: <a class="underline text-blue-600 hover:text-blue-800" href="${videoUrl}" target="_blank" rel="noreferrer">${videoUrl}</a>
         </div>
+        <div class="mt-2 text-sm text-neutral-600">${description}</div>
       `;
       const row = document.createElement("div");
       row.className = "mt-4 flex items-center gap-4";
@@ -214,7 +274,14 @@
       dl.className = "px-4 py-2 rounded border text-sm hover:bg-neutral-100 transition";
       dl.textContent = "دانلود QR";
       dl.id = "dlQR";
-      actions.append(open, copyBtn, dl);
+      const printAll = document.createElement("button");
+      printAll.className = "px-4 py-2 rounded border text-sm hover:bg-neutral-100 transition";
+      printAll.textContent = "پرینت همه QRها";
+      printAll.onclick = () => {
+        generateAllQRs();
+        setTimeout(() => window.print(), 1000);
+      };
+      actions.append(open, copyBtn, dl, printAll);
       row.appendChild(actions);
 
       body.appendChild(row);
@@ -250,8 +317,11 @@
 
       videos.forEach((video, index) => {
         const qrCard = document.createElement("div");
-        qrCard.className = "bg-white p-4 rounded-lg shadow-md text-center";
-        qrCard.innerHTML = `<div class="font-semibold text-sm mb-2">${video.title}</div>`;
+        qrCard.className = "bg-white/80 p-4 rounded-lg shadow-md text-center backdrop-blur-sm";
+        qrCard.innerHTML = `
+          <div class="font-semibold text-sm mb-2">${video.title}</div>
+          <div class="text-xs text-neutral-600 mb-2">${video.description}</div>
+        `;
         const qrBox = document.createElement("div");
         qrBox.id = `qr-all-${index}`;
         qrBox.className = "relative mx-auto";
@@ -275,7 +345,7 @@
       if (videoUrlInput) {
         VIDEO_URL = videoUrlInput;
         log("NEW_VIDEO_URL =", VIDEO_URL);
-        updateCard(VIDEO_URL, "ویدیوی سفارشی");
+        updateCard(VIDEO_URL, "ویدیوی سفارشی", "لینک ویدیوی واردشده توسط کاربر.");
         document.getElementById("all-qrs").classList.add("hidden");
       } else {
         log("لطفاً لینک ویدیوی معتبر وارد کنید.");
@@ -293,18 +363,13 @@
       if (video) {
         VIDEO_URL = video.url;
         log("CATEGORY_VIDEO_URL =", VIDEO_URL);
-        updateCard(VIDEO_URL, video.title);
+        updateCard(VIDEO_URL, video.title, video.description);
         document.getElementById("all-qrs").classList.add("hidden");
       }
     };
 
-    document.getElementById("print-all").onclick = () => {
-      generateAllQRs();
-      setTimeout(() => window.print(), 1000);
-    };
-
     // ——— بارگذاری اولیه ———
-    updateCard(VIDEO_URL);
+    updateCard(VIDEO_URL, videos[0].title, videos[0].description);
   </script>
 </body>
 </html>
