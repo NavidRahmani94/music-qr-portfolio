@@ -1,5 +1,5 @@
 /********** فقط این را عوض کن **********/
-const FILENAME = "logo M.MP4"; // ← دقیقا اسم ویدیویی که آپلود کردی (مثلا "track1.mp4")
+const FILENAME = "logo M.mp4"; // ← دقیقا اسم ویدیویی که آپلود کردی (مثلا "track1.mp4")
 /****************************************/
 
 function getBasePath(){
@@ -12,7 +12,7 @@ const VIDEOS = [
   {
     slug: FILENAME.replace(/\.[^/.]+$/, ""),
     title: `Local • ${FILENAME}`,
-    url: `${BASE}/assets/videos/logo M.MP4`,
+    url: `${BASE}/assets/videos/logo M.mp4`,
     thumbnail: `${BASE}/assets/thumbs/${FILENAME.replace(/\.[^/.]+$/, ".jpg")}`,
     tags: ["local"]
   }
