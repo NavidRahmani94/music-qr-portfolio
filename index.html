@@ -8,7 +8,7 @@
   <!-- استایل ساده -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- کتابخانهٔ QR (اگر هر دلیلی لود نشه، پایین فالبک داریم) -->
+  <!-- کتابخانهٔ QR -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
           integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g=="
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -29,6 +29,13 @@
   </header>
 
   <main class="max-w-5xl mx-auto px-4 py-8">
+    <!-- فرم برای وارد کردن لینک ویدیوی جدید -->
+    <div class="mb-6">
+      <label for="videoUrl" class="block text-sm font-medium">لینک ویدیوی جدید:</label>
+      <input id="videoUrl" type="url" class="mt-1 p-2 border rounded w-full" placeholder="https://example.com/video.mp4">
+      <button id="generateQR" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">تولید QR</button>
+    </div>
+
     <!-- لاگ برای عیب‌یابی -->
     <pre id="log" class="mono text-xs bg-white border rounded p-3 mb-4 whitespace-pre-wrap"></pre>
 
@@ -44,143 +51,157 @@
   </footer>
 
   <script>
-  // ——— تنظیمات شما ———
-  const VIDEO_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4";
-  const QR_SIZE = 148;
+    // ——— تنظیمات اولیه ———
+    const QR_SIZE = 148;
+    let VIDEO_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4"; // پیش‌فرض
 
-  // ——— کمک‌ها ———
-  const logEl = document.getElementById("log");
-  function log(...args){ logEl.textContent += args.join(" ") + "\n"; }
-  function makeQRWithLib(container, text) {
-    try {
-      if (typeof QRCode === "function") {
-        new QRCode(container, { text, width: QR_SIZE, height: QR_SIZE });
-        // اگر خروجی <canvas> بود به <img> تبدیلش کنیم تا دکمهٔ دانلود داشته باشیم
-        const img = container.querySelector("img");
-        if (!img) {
-          const canvas = container.querySelector("canvas");
-          if (canvas) {
-            const i = new Image();
-            i.src = canvas.toDataURL("image/png");
-            i.width = QR_SIZE; i.height = QR_SIZE;
-            i.className = "rounded border";
-            container.innerHTML = "";
-            container.appendChild(i);
+    // ——— کمک‌ها ———
+    const logEl = document.getElementById("log");
+    function log(...args) { logEl.textContent += args.join(" ") + "\n"; }
+    
+    function makeQRWithLib(container, text) {
+      try {
+        if (typeof QRCode === "function") {
+          new QRCode(container, { text, width: QR_SIZE, height: QR_SIZE });
+          const img = container.querySelector("img");
+          if (!img) {
+            const canvas = container.querySelector("canvas");
+            if (canvas) {
+              const i = new Image();
+              i.src = canvas.toDataURL("image/png");
+              i.width = QR_SIZE; i.height = QR_SIZE;
+              i.className = "rounded border";
+              container.innerHTML = "";
+              container.appendChild(i);
+            }
+          } else {
+            img.width = QR_SIZE; img.height = QR_SIZE;
+            img.className = "rounded border";
           }
-        } else {
-          img.width = QR_SIZE; img.height = QR_SIZE;
-          img.className = "rounded border";
+          return true;
         }
-        return true;
+      } catch (e) { log("QR lib error:", e.message); }
+      return false;
+    }
+
+    function makeQRFallbackIMG(container, text) {
+      const url = `https://api.qrserver.com/v1/create-qr-code/?size=${QR_SIZE}x${QR_SIZE}&data=${encodeURIComponent(text)}`;
+      const img = new Image();
+      img.src = url;
+      img.width = QR_SIZE; img.height = QR_SIZE;
+      img.alt = "QR";
+      img.className = "rounded border";
+      container.innerHTML = "";
+      container.appendChild(img);
+      return img;
+    }
+
+    // ——— UI ابتدایی ———
+    document.getElementById("year").textContent = new Date().getFullYear();
+    document.getElementById("print").onclick = () => window.print();
+    document.getElementById("copy").onclick = () => navigator.clipboard.writeText(location.href);
+
+    log("PAGE_URL =", location.href);
+    log("VIDEO_URL =", VIDEO_URL);
+
+    // ——— تابع برای به‌روزرسانی کارت ———
+    function updateCard(videoUrl) {
+      const card = document.getElementById("card");
+      card.innerHTML = ""; // پاک کردن محتوای قبلی
+
+      // ——— ویدیو ———
+      const media = document.createElement("div");
+      const vid = document.createElement("video");
+      vid.controls = true;
+      vid.preload = "metadata";
+      vid.className = "w-full h-60 object-contain bg-black";
+      const src = document.createElement("source");
+      src.src = videoUrl; src.type = "video/mp4";
+      vid.appendChild(src);
+      media.appendChild(vid);
+      card.appendChild(media);
+
+      // اگر پخش خطا داشت، پیام بده
+      vid.addEventListener("error", () => {
+        const err = vid.error, map = {1:"ABORTED",2:"NETWORK",3:"DECODE",4:"SRC_NOT_SUPPORTED"};
+        const code = err?.code || 0;
+        log("VIDEO_ERROR code=" + code + " (" + (map[code]||"UNKNOWN") + ")");
+        const warn = document.createElement("div");
+        warn.className = "p-3 mt-2 text-sm rounded bg-red-50 border text-red-700";
+        warn.textContent = "پخش ویدیو خطا داد: code=" + code + " (" + (map[code]||"UNKNOWN") + ") — اگر 404 است مسیر/نام فایل را چک کن؛ اگر DECODE است فایل را به H.264/AAC تبدیل کن.";
+        media.appendChild(warn);
+      });
+
+      // ——— بدنه + QR ———
+      const body = document.createElement("div");
+      body.className = "p-4";
+      body.innerHTML = `
+        <div class="font-semibold text-base">ویدیو</div>
+        <div class="mt-2 text-xs text-neutral-600 break-all">
+          لینک مستقیم: <a class="underline text-blue-600" href="${videoUrl}" target="_blank" rel="noreferrer">${videoUrl}</a>
+        </div>
+      `;
+      const row = document.createElement("div");
+      row.className = "mt-4 flex items-center gap-3";
+
+      const qrBox = document.createElement("div");
+      qrBox.id = "qrBox";
+      row.appendChild(qrBox);
+
+      const actions = document.createElement("div");
+      actions.className = "flex flex-col gap-2";
+      const open = document.createElement("a");
+      open.className = "px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90 inline-block";
+      open.href = videoUrl; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100";
+      copyBtn.textContent = "Copy Link";
+      copyBtn.onclick = () => navigator.clipboard.writeText(videoUrl);
+      const dl = document.createElement("a");
+      dl.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100 inline-block";
+      dl.textContent = "Download QR";
+      dl.id = "dlQR";
+      actions.append(open, copyBtn, dl);
+      row.appendChild(actions);
+
+      body.appendChild(row);
+      card.appendChild(body);
+
+      // ——— ساخت QR ———
+      let qrImgElement = null;
+      const ok = makeQRWithLib(qrBox, videoUrl);
+      if (ok) {
+        log("QR: ساخته شد با qrcodejs");
+        qrImgElement = qrBox.querySelector("img") || qrBox.querySelector("canvas");
+      } else {
+        log("QR: فالبک آنلاین (img) فعال شد");
+        qrImgElement = makeQRFallbackIMG(qrBox, videoUrl);
       }
-    } catch(e){ log("QR lib error:", e.message); }
-    return false;
-  }
-  function makeQRFallbackIMG(container, text) {
-    const url = "https://api.qrserver.com/v1/create-qr-code/?size="
-                + QR_SIZE + "x" + QR_SIZE + "&data="
-                + encodeURIComponent(text);
-    const img = new Image();
-    img.src = url;
-    img.width = QR_SIZE; img.height = QR_SIZE;
-    img.alt = "QR";
-    img.className = "rounded border";
-    container.innerHTML = "";
-    container.appendChild(img);
-    return img;
-  }
 
-  // ——— UI ابتدایی ———
-  document.getElementById("year").textContent = new Date().getFullYear();
-  document.getElementById("print").onclick = () => window.print();
-  document.getElementById("copy").onclick  = () => navigator.clipboard.writeText(location.href);
+      // لینک دانلود QR
+      const dlLink = document.getElementById("dlQR");
+      if (qrImgElement.tagName.toLowerCase() === "img" && qrImgElement.src.startsWith("data:")) {
+        dlLink.href = qrImgElement.src;
+      } else {
+        dlLink.href = qrImgElement.src || videoUrl;
+      }
+      dlLink.download = "video-qr.png";
+    }
 
-  log("PAGE_URL =", location.href);
-  log("VIDEO_URL =", VIDEO_URL);
+    // ——— رویداد برای فرم ———
+    document.getElementById("generateQR").onclick = () => {
+      const videoUrlInput = document.getElementById("videoUrl").value;
+      if (videoUrlInput) {
+        VIDEO_URL = videoUrlInput;
+        log("NEW_VIDEO_URL =", VIDEO_URL);
+        updateCard(VIDEO_URL);
+      } else {
+        log("لطفاً لینک ویدیوی معتبر وارد کنید.");
+      }
+    };
 
-  const card = document.getElementById("card");
-
-  // ——— ویدیو ———
-  const media = document.createElement("div");
-  const vid = document.createElement("video");
-  vid.controls = true;
-  vid.preload = "metadata";
-  vid.className = "w-full h-60 object-contain bg-black";
-  const src = document.createElement("source");
-  src.src = VIDEO_URL; src.type = "video/mp4";
-  vid.appendChild(src);
-  media.appendChild(vid);
-  card.appendChild(media);
-
-  // اگر پخش خطا داشت، پیام بده
-  vid.addEventListener("error", ()=>{
-    const err = vid.error, map = {1:"ABORTED",2:"NETWORK",3:"DECODE",4:"SRC_NOT_SUPPORTED"};
-    const code = err?.code || 0;
-    log("VIDEO_ERROR code=" + code + " (" + (map[code]||"UNKNOWN") + ")");
-    const warn = document.createElement("div");
-    warn.className = "p-3 mt-2 text-sm rounded bg-red-50 border text-red-700";
-    warn.textContent = "پخش ویدیو خطا داد: code=" + code + " (" + (map[code]||"UNKNOWN") + ") — اگر 404 است مسیر/نام فایل را چک کن؛ اگر DECODE است فایل را به H.264/AAC تبدیل کن.";
-    media.appendChild(warn);
-  });
-
-  // ——— بدنه + QR ———
-  const body = document.createElement("div");
-  body.className = "p-4";
-  body.innerHTML = `
-    <div class="font-semibold text-base">ویدیو</div>
-    <div class="mt-2 text-xs text-neutral-600 break-all">
-      لینک مستقیم: <a class="underline text-blue-600" href="${VIDEO_URL}" target="_blank" rel="noreferrer">${VIDEO_URL}</a>
-    </div>
-  `;
-  const row = document.createElement("div");
-  row.className = "mt-4 flex items-center gap-3";
-
-  const qrBox = document.createElement("div");
-  qrBox.id = "qrBox";
-  row.appendChild(qrBox);
-
-  const actions = document.createElement("div");
-  actions.className = "flex flex-col gap-2";
-  const open = document.createElement("a");
-  open.className = "px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90 inline-block";
-  open.href = VIDEO_URL; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
-  const copyBtn = document.createElement("button");
-  copyBtn.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100";
-  copyBtn.textContent = "Copy Link";
-  copyBtn.onclick = ()=> navigator.clipboard.writeText(VIDEO_URL);
-  const dl = document.createElement("a");
-  dl.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100 inline-block";
-  dl.textContent = "Download QR";
-  dl.id = "dlQR";
-  actions.append(open, copyBtn, dl);
-  row.appendChild(actions);
-
-  body.appendChild(row);
-  card.appendChild(body);
-
-  // ——— ساخت QR با دو حالت: کتابخانه یا فالبک ———
-  let qrImgElement = null;
-  const ok = makeQRWithLib(qrBox, VIDEO_URL);
-  if (ok) {
-    log("QR: ساخته شد با qrcodejs");
-    qrImgElement = qrBox.querySelector("img") || qrBox.querySelector("canvas");
-    // اگر <canvas> بود، دانلود مستقیم تصویر نداریم؛ در makeQRWithLib به <img> تبدیل کردیم.
-  } else {
-    log("QR: فالبک آنلاین (img) فعال شد");
-    qrImgElement = makeQRFallbackIMG(qrBox, VIDEO_URL);
-  }
-
-  // لینک دانلود QR (اگر dataURL داریم از همان، وگرنه از src)
-  const dlLink = document.getElementById("dlQR");
-  if (qrImgElement.tagName.toLowerCase() === "img" && qrImgElement.src.startsWith("data:")) {
-    dlLink.href = qrImgElement.src;
-  } else {
-    // اگر عکس از سرویس آنلاین است، همان src را برای دانلود می‌گذاریم
-    dlLink.href = qrImgElement.src || VIDEO_URL;
-  }
-  dlLink.download = "video-qr.png";
+    // ——— بارگذاری اولیه ———
+    updateCard(VIDEO_URL);
   </script>
-
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
