@@ -1,38 +1,45 @@
 <!doctype html>
-<html lang="fa">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ویدیوهای من + QR (لوکال)</title>
 
-  <!-- Tailwind via CDN -->
+  <!-- TailwindCSS از CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- QRCode.js -->
+
+  <!-- کتابخانهٔ QR (باید قبل از app.js لود شود) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
           integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g=="
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <style>
-    @media print { #controls{display:none!important} #grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
+    @media print {
+      #controls { display:none !important; }
+      #grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900">
+  <!-- هدر -->
   <header class="sticky top-0 z-10 backdrop-blur bg-white/70 border-b">
-    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3" id="controls">
+    <div id="controls" class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
       <div class="font-bold text-lg">🎬 پورتفولیو ویدیو (لوکال) + QR</div>
       <div class="ml-auto flex items-center gap-2">
         <input id="search" type="search" placeholder="جست‌وجوی عنوان/تگ…"
-               class="w-64 border rounded px-3 py-2 text-sm focus:outline-none focus:ring">
+               class="w-64 border rounded px-3 py-2 text-sm focus:outline-none focus:ring" />
         <button id="print" class="border rounded px-3 py-2 text-sm hover:bg-neutral-100">پرینت QR</button>
       </div>
     </div>
   </header>
 
+  <!-- بدنه -->
   <main class="max-w-6xl mx-auto px-4 py-8">
     <div id="grid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
     <div id="empty" class="hidden text-center text-neutral-500 py-16">موردی پیدا نشد.</div>
   </main>
 
+  <!-- فوتر -->
   <footer class="border-t bg-white/70">
     <div class="max-w-6xl mx-auto px-4 py-6 text-xs text-neutral-500 flex items-center justify-between">
       <div>© <span id="year"></span> • Your Name</div>
@@ -40,8 +47,10 @@
     </div>
   </footer>
 
-  <!-- مهم: qrcode.min.js باید قبل از app.js لود شود -->
+  <!-- اسکریپت اصلی پروژه -->
   <script src="app.js"></script>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
