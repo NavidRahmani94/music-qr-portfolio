@@ -1,5 +1,5 @@
-/* ====== تنظیمات ====== */
-const CHANNEL_HANDLE = "@harsh_beatz5314"; // ← هندل کانال
+/* ====== تنظیمات اولیه ====== */
+let CHANNEL_HANDLE = "@harsh_beatz5314"; // اگر هندل تغییر کرد اینجا عوض کن
 
 /* ====== ابزار ====== */
 const logEl = document.getElementById("log");
@@ -8,7 +8,6 @@ function log(...args){ try{ logEl.textContent += args.join(" ") + "\n"; }catch(_
 function getBaseURL() {
   const { protocol, host, pathname } = window.location;
   const parts = pathname.split("/").filter(Boolean);
-  // اگر روی GitHub Pages هستی، parts[0] اسم ریپو است
   return parts.length >= 1 ? `${protocol}//${host}/${parts[0]}/` : `${protocol}//${host}/`;
 }
 const BASE = getBaseURL();
@@ -17,12 +16,19 @@ function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* ====== 1) ریدایرکت بر اساس ?id=... ====== */
+const qrList   = document.getElementById("qrList");
+const emptyEl  = document.getElementById("empty");
+const searchEl = document.getElementById("searchInput");
+const copyBtn  = document.getElementById("copyBtn");
+const printBtn = document.getElementById("printBtn");
+const metaEl   = document.getElementById("meta");
+const notice   = document.getElementById("notice");
+
+/* ====== 1) ریدایرکت براساس ?id=... ====== */
 (async function redirectIfNeeded() {
   const params = new URLSearchParams(location.search);
   const id = params.get("id");
   if (!id) return;
-  const notice = document.getElementById("notice");
   try {
     const map = await buildLinkMap();
     log("[redirect] map keys:", Object.keys(map).length);
@@ -44,13 +50,6 @@ function escapeHtml(s) {
 })();
 
 /* ====== 2) لیست QR ====== */
-const qrList   = document.getElementById("qrList");
-const emptyEl  = document.getElementById("empty");
-const searchEl = document.getElementById("searchInput");
-const copyBtn  = document.getElementById("copyBtn");
-const printBtn = document.getElementById("printBtn");
-const metaEl   = document.getElementById("meta");
-
 let ALL = [];   // {slug,title,url}
 let filtered = [];
 
@@ -61,13 +60,16 @@ init();
 
 async function init() {
   try {
-    metaEl.textContent = "در حال یافتن Channel ID ...";
-    const { channelId, title: channelTitle } = await resolveChannelIdFromHandle(CHANNEL_HANDLE);
+    metaEl.innerHTML = `در حال یافتن Channel ID از هندل <b>${escapeHtml(CHANNEL_HANDLE)}</b> ...`;
+
+    let { channelId, title: channelTitle } = await resolveChannelIdFromHandle(CHANNEL_HANDLE);
     log("[init] resolved channelId:", channelId, "title:", channelTitle);
 
+    // اگر پیدا نشد، UI دستی نشان بده
     if (!channelId) {
-      metaEl.innerHTML = `<span class="text-red-600">Channel ID پیدا نشد. هندل را چک کن.</span>`;
-      // fallback: حداقل یک لینک نمونه‌ی کاربر
+      showManualInput();
+      metaEl.innerHTML = `<span class="text-red-600">Channel ID پیدا نشد. هندل را چک کن یا از ورودی دستی پایین استفاده کن.</span>`;
+      // یک fallback حداقلی تا صفحه خالی نباشه
       ALL = [
         { slug: "D5kJ3z4F30g", title: "Sample (fallback)", url: "https://www.youtube.com/watch?v=D5kJ3z4F30g" }
       ];
@@ -81,8 +83,8 @@ async function init() {
     log("[init] rss items:", arr.length);
 
     if (!arr.length) {
-      metaEl.innerHTML += " • <span class='text-amber-600'>RSS آیتمی نیاورد (ممکنه موقت باشه).</span>";
-      // fallback حداقلی
+      metaEl.innerHTML += " • <span class='text-amber-600'>RSS آیتمی نیاورد (احتمالاً محدودیت موقتی).</span>";
+      // fallback
       ALL = [
         { slug: "D5kJ3z4F30g", title: "Sample (fallback)", url: "https://www.youtube.com/watch?v=D5kJ3z4F30g" }
       ];
@@ -93,10 +95,11 @@ async function init() {
     render();
   } catch (e) {
     log("[init] ERROR:", e?.message || e);
-    metaEl.innerHTML = `<span class="text-red-600">خطا در بارگذاری. صفحه را یک بار با Ctrl+F5 رفرش کن.</span>`;
+    metaEl.innerHTML = `<span class="text-red-600">خطا در بارگذاری. یک‌بار با Ctrl+F5 رفرش کن.</span>`;
   }
 }
 
+/* ====== جست‌وجو/کپی/پرینت ====== */
 searchEl?.addEventListener("input", (e) => {
   const q = e.target.value.trim().toLowerCase();
   filtered = ALL.filter(x => [x.slug, x.title, x.url].join(" ").toLowerCase().includes(q));
@@ -105,25 +108,97 @@ searchEl?.addEventListener("input", (e) => {
 copyBtn?.addEventListener("click", () => navigator.clipboard.writeText(location.href));
 printBtn?.addEventListener("click", () => window.print());
 
-/* ====== گرفتن Channel ID از روی هندل ======
-   از r.jina.ai استفاده می‌کنیم تا CORS مزاحم نشه.
-*/
+/* ====== ورودی دستی درصورت خطا ====== */
+function showManualInput() {
+  const wrap = document.createElement("div");
+  wrap.className = "mb-4 p-3 bg-white border rounded-xl";
+  wrap.innerHTML = `
+    <div class="text-sm mb-2">نشد خودکار پیدا کنم. یکی از اینها را وارد کن و Enter بزن:</div>
+    <ul class="list-disc ml-6 text-xs mb-2">
+      <li>Channel ID (با UC شروع می‌شود)، مثلا: <code class="bg-neutral-100 px-1 rounded">UCxxxxxxxxxxxxxxxx</code></li>
+      <li>یا لینک کانال (مثل <code class="bg-neutral-100 px-1 rounded">https://www.youtube.com/@your_handle</code> یا <code class="bg-neutral-100 px-1 rounded">https://www.youtube.com/channel/UC...</code>)</li>
+    </ul>
+    <input id="manualInput" class="w-full border rounded px-3 py-2 text-sm" placeholder="Channel ID یا لینک کانال">
+  `;
+  metaEl.after(wrap);
+  const input = wrap.querySelector("#manualInput");
+  input.addEventListener("keydown", async (e)=>{
+    if (e.key !== "Enter") return;
+    const v = String(input.value || "").trim();
+    if (!v) return;
+    let channelId = null;
+
+    // اگر مستقیم UC... بود
+    if (/^UC[\w-]{20,}$/.test(v)) {
+      channelId = v;
+    }
+    // اگر لینک /channel/UC... بود
+    const m1 = v.match(/\/channel\/(UC[\w-]{20,})/i);
+    if (!channelId && m1) channelId = m1[1];
+
+    // اگر لینک @handle بود، دوباره تلاش کن
+    const m2 = v.match(/youtube\.com\/(@[A-Za-z0-9._-]+)/);
+    if (!channelId && m2) {
+      const r = await resolveChannelIdFromHandle(m2[1]);
+      channelId = r.channelId;
+    }
+
+    if (!channelId) {
+      alert("نتوانستم Channel ID را از ورودی تشخیص دهم.");
+      return;
+    }
+
+    metaEl.textContent = `Channel ID: ${channelId}`;
+    const arr = await fetchVideosByChannelId(channelId);
+    ALL = arr.length ? arr : [
+      { slug: "D5kJ3z4F30g", title: "Sample (fallback)", url: "https://www.youtube.com/watch?v=D5kJ3z4F30g" }
+    ];
+    filtered = [...ALL];
+    render();
+  });
+}
+
+/* ====== پیدا کردن Channel ID از هندل — نسخه مقاوم ====== */
 async function resolveChannelIdFromHandle(handle) {
-  try {
-    const url = `https://r.jina.ai/https://www.youtube.com/${encodeURIComponent(handle)}`;
-    const res = await fetch(url);
-    const text = await res.text();
-    // گزینه‌های مختلف برای استخراج:
-    // "channelId":"UCxxxx", "externalId":"UCxxxx", یا canonicalChannelId
-    let m = text.match(/"channelId"\\s*:\\s*"((?:UC|UC)[\\w-]{20,})"/);
-    if (!m) m = text.match(/"externalId"\\s*:\\s*"((?:UC)[\\w-]{20,})"/);
-    if (!m) m = text.match(/"canonicalChannelId"\\s*:\\s*"((?:UC)[\\w-]{20,})"/);
-    const t = text.match(/"title"\\s*:\\s*"([^"]+)"/);
-    return { channelId: m ? m[1] : null, title: t ? t[1] : null };
-  } catch (e) {
-    log("[resolveChannelIdFromHandle] ERROR:", e?.message || e);
-    return { channelId: null, title: null };
+  // چند URL مختلف برای افزایش شانس
+  const paths = ["", "/about", "/videos"];
+  const schemes = ["https://", "http://"];
+  const tries = [];
+  for (const sch of schemes) {
+    for (const p of paths) {
+      tries.push(`https://r.jina.ai/${sch}www.youtube.com/${encodeURIComponent(handle)}${p}`);
+    }
   }
+
+  for (const url of tries) {
+    try {
+      log("[resolve] try:", url);
+      const res = await fetch(url);
+      if (!res.ok) { log("[resolve] bad status:", res.status); continue; }
+      const text = await res.text();
+
+      // چند الگوی احتمالی
+      const patterns = [
+        /"channelId"\s*:\s*"(UC[\w-]{20,})"/,
+        /"externalId"\s*:\s*"(UC[\w-]{20,})"/,
+        /"canonicalChannelId"\s*:\s*"(UC[\w-]{20,})"/,
+        /"browseId"\s*:\s*"(UC[\w-]{20,})"/,
+        /href="\/channel\/(UC[\w-]{20,})"/
+      ];
+
+      for (const re of patterns) {
+        const m = text.match(re);
+        if (m && m[1]) {
+          const t = text.match(/"title"\s*:\s*"([^"]+)"/);
+          log("[resolve] FOUND id:", m[1]);
+          return { channelId: m[1], title: t ? t[1] : null };
+        }
+      }
+    } catch (e) {
+      log("[resolve] error:", e?.message || e);
+    }
+  }
+  return { channelId: null, title: null };
 }
 
 /* ====== خواندن RSS کانال ====== */
@@ -132,6 +207,7 @@ async function fetchVideosByChannelId(channelId) {
   try {
     const rss = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
     const via = `https://r.jina.ai/${rss}`;
+    log("[rss] GET", via);
     const res = await fetch(via);
     const txt = await res.text();
     const xml = new DOMParser().parseFromString(txt, "application/xml");
@@ -145,14 +221,14 @@ async function fetchVideosByChannelId(channelId) {
       if (link && vid) list.push({ slug: vid, title, url: link });
     });
   } catch (e) {
-    log("[fetchVideosByChannelId] ERROR:", e?.message || e);
+    log("[rss] ERROR:", e?.message || e);
   }
   // حذف تکراری‌ها
   const seen = new Set();
   return list.filter(x => !seen.has(x.slug) && seen.add(x.slug));
 }
 
-/* ====== نقشه‌ی slug→url برای ریدایرکت ====== */
+/* ====== نقشه slug→url (برای ریدایرکت) ====== */
 async function buildLinkMap() {
   const { channelId } = await resolveChannelIdFromHandle(CHANNEL_HANDLE);
   const arr = channelId ? await fetchVideosByChannelId(channelId) : [];
