@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>لینک‌های کانال + QR</title>
+  <title>لینک‌های کانال + QR (Safe Mode)</title>
 
   <!-- TailwindCSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -17,13 +17,14 @@
       #controls { display: none !important; }
       #qrList { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
 <body class="bg-neutral-50 text-neutral-900">
   <header class="sticky top-0 z-10 backdrop-blur bg-white/70 border-b">
     <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3" id="controls">
       <div class="font-bold">📦 QR Manager (YouTube Channel)</div>
-      <div class="text-xs border rounded px-2 py-0.5 bg-neutral-100">auto by handle</div>
+      <div class="text-xs border rounded px-2 py-0.5 bg-neutral-100">auto by handle • Safe Mode</div>
       <div class="ml-auto flex items-center gap-2">
         <input id="searchInput" type="search" placeholder="جست‌وجو..."
                class="w-60 border rounded px-3 py-2 text-sm focus:outline-none focus:ring">
@@ -41,6 +42,11 @@
 
     <div id="qrList" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
     <div id="empty" class="hidden text-center text-neutral-500 py-16">چیزی پیدا نشد.</div>
+
+    <details class="mt-8 bg-white border rounded-xl p-4">
+      <summary class="cursor-pointer font-semibold">🛠️ وضعیت و خطاها</summary>
+      <pre id="log" class="mono text-xs mt-3 whitespace-pre-wrap"></pre>
+    </details>
   </main>
 
   <footer class="border-t bg-white/70">
