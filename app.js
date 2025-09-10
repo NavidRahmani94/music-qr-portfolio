@@ -1,35 +1,39 @@
-/* ===== کمک: base برای GitHub Pages ===== */
-function getBasePath() {
-  // اگر سایت روی https://<user>.github.io/<repo>/ است، باید /<repo> را جلو مسیر فایل‌ها اضافه کنیم
+/********** فقط این را عوض کن **********/
+const FILENAME = logo M.mp4"; // ← دقیقا اسم ویدیویی که آپلود کردی (مثلا "track1.mp4")
+/****************************************/
+
+/* base برای GitHub Pages */
+function getBasePath(){
   const parts = location.pathname.split("/").filter(Boolean);
   return parts.length ? `/${parts[0]}` : "";
 }
 const BASE = getBasePath();
 
-/* ===== ویدیوهای لوکال: این آرایه را با فایل‌های خودت پر کن =====
-   - فایل MP4 را در: assets/videos/
-   - کاور (اختیاری) را در: assets/thumbs/
-   - اگر thumbnail نداشتی، خودش عکس پیش‌فرض می‌گذارد.
-*/
+/* یک آیتم ویدیو با پلیر داخلی + QR */
 const VIDEOS = [
   {
-    slug: "my-track",
-    title: "My Track (Local MP4)",
-    url: `${BASE}/assets/videos/logo M.mp4`,          // ← نام فایل خودت
-    thumbnail: `${BASE}/assets/thumbs/my-track.jpg`,    // ← اختیاری
-    tags: ["studio","2025"]
-  },
-  // نمونه‌های بعدی:
-  // { slug: "beat-01", title: "Beat 01", url: `${BASE}/assets/videos/beat-01.mp4`, thumbnail: `${BASE}/assets/thumbs/beat-01.jpg`, tags:["beat"] },
+    slug: FILENAME.replace(/\.[^/.]+$/, ""),      // مثلا "track1"
+    title: `Local • ${FILENAME}`,
+    url: `${BASE}/assets/videos/logo M.mp4`,
+    thumbnail: `${BASE}/assets/thumbs/${FILENAME.replace(/\.[^/.]+$/, ".jpg")}`, // اختیاری
+    tags: ["local"]
+  }
 ];
 
-/* ===== DOM ===== */
+/* DOM */
 const grid = document.getElementById("grid");
 const empty = document.getElementById("empty");
 const search = document.getElementById("search");
 const copyBtn = document.getElementById("copy");
 const printBtn = document.getElementById("print");
 
+/* دیباگ روی صفحه */
+const dbg = document.createElement("pre");
+dbg.style.cssText = "font:12px/1.4 ui-monospace,monospace; background:#fff; border:1px solid #eee; padding:8px; margin:8px 0; white-space:pre-wrap;";
+dbg.textContent = `BASE=${BASE}\nVideo URL=${VIDEOS[0].url}\nPage URL=${location.href}`;
+document.querySelector("main").prepend(dbg);
+
+/* رندر */
 let filtered = [...VIDEOS];
 render();
 
@@ -41,7 +45,6 @@ search.addEventListener("input", (e)=>{
 copyBtn.addEventListener("click", ()=> navigator.clipboard.writeText(location.href));
 printBtn.addEventListener("click", ()=> window.print());
 
-/* ===== رندر کارت با پلیر داخلی + QR ===== */
 function render(){
   grid.innerHTML = "";
   if(!filtered.length){ empty.classList.remove("hidden"); return; }
@@ -51,65 +54,52 @@ function render(){
     const card = document.createElement("div");
     card.className = "overflow-hidden rounded-2xl shadow-sm hover:shadow transition bg-white border flex flex-col";
 
-    // کاور یا پلیر
+    // پلیر داخلی
     const mediaWrap = document.createElement("div");
-    mediaWrap.className = "relative";
-    if (isMp4(v.url)) {
-      mediaWrap.innerHTML = `
-        <video controls preload="metadata" class="w-full h-48 object-cover bg-black">
-          <source src="${v.url}" type="video/mp4">
-          مرورگر شما از ویدیو پشتیبانی نمی‌کند.
-        </video>`;
-    } else {
-      mediaWrap.innerHTML = `
-        <a href="${v.url}" target="_blank" rel="noreferrer">
-          <img src="${v.thumbnail || 'https://placehold.co/600x300?text=Video'}" alt="${esc(v.title)}" class="w-full h-48 object-cover">
-        </a>`;
-    }
+    mediaWrap.innerHTML = `
+      <video controls preload="metadata" class="w-full h-48 object-cover bg-black">
+        <source src="${v.url}" type="video/mp4">
+        مرورگر شما از ویدیو پشتیبانی نمی‌کند.
+      </video>`;
 
-    // بدنه
     const body = document.createElement("div");
-    body.className = "p-4 flex-1 flex flex-col";
+    body.className = "p-4";
     body.innerHTML = `
-      <div class="font-semibold text-base leading-tight line-clamp-2">${esc(v.title)}</div>
+      <div class="font-semibold text-base leading-tight">${esc(v.title)}</div>
       <div class="mt-1 flex flex-wrap gap-1">${(v.tags||[]).map(t=>`<span class="text-[10px] px-2 py-0.5 rounded bg-black/70 text-white">${esc(t)}</span>`).join("")}</div>
+      <div class="mt-3 flex items-center gap-2">
+        <a class="px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90" href="${v.url}" target="_blank" rel="noreferrer">Open</a>
+        <button class="px-3 py-2 rounded border text-sm hover:bg-neutral-100" data-copy="${v.url}">Copy Link</button>
+        <button class="px-3 py-2 rounded text-sm hover:bg-neutral-100" data-toggle-qr>Show QR</button>
+      </div>
+      <div class="mt-4 p-3 bg-neutral-50 border rounded-xl hidden items-center justify-center" id="qrbox"></div>
     `;
 
-    // دکمه‌ها
-    const actions = document.createElement("div");
-    actions.className = "mt-3 flex items-center gap-2";
-    actions.innerHTML = `
-      <a class="px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90" href="${v.url}" target="_blank" rel="noreferrer">Open</a>
-      <button class="px-3 py-2 rounded border text-sm hover:bg-neutral-100" data-copy="${v.url}">Copy Link</button>
-      <button class="px-3 py-2 rounded text-sm hover:bg-neutral-100" data-toggle-qr>Show QR</button>
-    `;
+    const qrBtn = body.querySelector("[data-toggle-qr]");
+    const copyBtn = body.querySelector("[data-copy]");
+    const qrBox  = body.querySelector("#qrbox");
 
-    // QR box
-    const qrBox = document.createElement("div");
-    qrBox.className = "mt-4 p-3 bg-neutral-50 border rounded-xl hidden items-center justify-center";
-
-    // رویدادها
-    actions.querySelector(`[data-copy]`).onclick = (e)=> {
-      navigator.clipboard.writeText(e.currentTarget.getAttribute("data-copy"));
-    };
-    actions.querySelector(`[data-toggle-qr]`).onclick = (e)=> {
-      const btn = e.currentTarget;
-      const isHidden = qrBox.classList.toggle("hidden");
-      btn.textContent = isHidden ? "Show QR" : "Hide QR";
-      if (!isHidden && !qrBox.dataset.ready) {
+    copyBtn.onclick = ()=> navigator.clipboard.writeText(v.url);
+    qrBtn.onclick = ()=>{
+      const hidden = qrBox.classList.toggle("hidden");
+      qrBtn.textContent = hidden ? "Show QR" : "Hide QR";
+      if (!hidden && !qrBox.dataset.ready) {
         new QRCode(qrBox, { text: v.url, width: 148, height: 148 });
         qrBox.dataset.ready = "1";
       }
     };
 
-    body.appendChild(actions);
-    body.appendChild(qrBox);
-
     card.appendChild(mediaWrap);
     card.appendChild(body);
     grid.appendChild(card);
   });
+
+  // یک QR تستی برای خود صفحه (برای اطمینان از لود شدن کتابخانه QR)
+  const test = document.createElement("div");
+  test.className = "p-4 bg-white border rounded-xl mt-4";
+  test.innerHTML = `<div class="text-sm mb-2">Test QR (Home URL):</div><div id="qrtest"></div>`;
+  document.querySelector("main").appendChild(test);
+  new QRCode(document.getElementById("qrtest"), { text: location.href, width: 96, height: 96 });
 }
 
-function isMp4(u){ return /\.mp4(\?|#|$)/i.test(u); }
 function esc(s){ return (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
