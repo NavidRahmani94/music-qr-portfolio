@@ -3,49 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ویدیو + QR (با فالبک تضمینی)</title>
+  <title>Navid Rahmani: Producer Portfolio</title>
 
-  <!-- استایل ساده -->
+  <!-- استایل با Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- کتابخانهٔ QR -->
+  <!-- کتابخانه QR -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
           integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g=="
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <style>
-    @media print { #controls{display:none!important} #grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
-    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    @media print { 
+      #controls, #input-form, #log { display: none !important; } 
+      #grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      #all-qrs { display: block !important; }
+    }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+    /* انیمیشن ورود کارت */
+    @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-slideIn { animation: slideIn 0.5s ease-out; }
+    /* انیمیشن بنر */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .banner { animation: fadeIn 1s ease-in; }
+    /* افکت hover برای QR */
+    .qr-hover:hover { transform: scale(1.05); transition: transform 0.3s ease; }
+    /* انیمیشن بارگذاری QR */
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid #fff;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
   </style>
 </head>
-<body class="bg-neutral-50 text-neutral-900">
-  <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
+<body class="bg-gradient-to-b from-blue-50 to-gray-100 text-neutral-900">
+  <!-- بنر -->
+  <header class="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg banner">
     <div id="controls" class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-      <div class="font-bold text-lg">🎬 ویدیو + QR</div>
-      <div class="ml-auto">
-        <button id="print" class="border rounded px-3 py-2 text-sm hover:bg-neutral-100">پرینت QR</button>
+      <div class="flex items-center gap-2">
+        <span class="text-2xl font-bold">🎬 Navid Rahmani: Producer Portfolio</span>
+        <span class="text-sm opacity-75">نمونه‌کارهای حرفه‌ای تولید موسیقی</span>
+      </div>
+      <div class="ml-auto flex gap-2">
+        <button id="print" class="border border-white/20 rounded px-4 py-2 text-sm hover:bg-white/20 transition">پرینت QR</button>
+        <button id="print-all" class="border border-white/20 rounded px-4 py-2 text-sm hover:bg-white/20 transition">پرینت همه QRها</button>
       </div>
     </div>
   </header>
 
   <main class="max-w-5xl mx-auto px-4 py-8">
-    <!-- فرم برای وارد کردن لینک ویدیوی جدید -->
-    <div class="mb-6">
-      <label for="videoUrl" class="block text-sm font-medium">لینک ویدیوی جدید:</label>
-      <input id="videoUrl" type="url" class="mt-1 p-2 border rounded w-full" placeholder="https://example.com/video.mp4">
-      <button id="generateQR" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">تولید QR</button>
+    <!-- فرم برای انتخاب دسته‌بندی و لینک ویدیو -->
+    <div id="input-form" class="mb-6 bg-white p-6 rounded-xl shadow-md animate-slideIn">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="category" class="block text-sm font-medium">دسته‌بندی:</label>
+          <select id="category" class="mt-1 p-2 border rounded w-full">
+            <option value="all">همه</option>
+            <option value="mix_master">Mix and Master</option>
+            <option value="sound_design">Sound Design</option>
+            <option value="producer_project">Producer Project</option>
+            <option value="sound_recording">Sound Recording</option>
+          </select>
+        </div>
+        <div>
+          <label for="videoUrl" class="block text-sm font-medium">لینک ویدیوی جدید:</label>
+          <input id="videoUrl" type="url" class="mt-1 p-2 border rounded w-full" placeholder="https://example.com/video.mp4">
+        </div>
+      </div>
+      <button id="generateQR" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">تولید QR</button>
     </div>
 
     <!-- لاگ برای عیب‌یابی -->
     <pre id="log" class="mono text-xs bg-white border rounded p-3 mb-4 whitespace-pre-wrap"></pre>
 
     <!-- کارت -->
-    <div id="card" class="overflow-hidden rounded-2xl shadow-sm bg-white border flex flex-col"></div>
+    <div id="card" class="overflow-hidden rounded-2xl shadow-md bg-white border flex flex-col animate-slideIn"></div>
+
+    <!-- بخش پرینت همه QRها -->
+    <div id="all-qrs" class="hidden mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
   </main>
 
   <footer class="border-t bg-white/70">
     <div class="max-w-5xl mx-auto px-4 py-6 text-xs text-neutral-500 flex items-center justify-between">
-      <div>© <span id="year"></span></div>
+      <div>© <span id="year"></span> Navid Rahmani: Producer Portfolio</div>
       <button id="copy" class="px-2 py-1 rounded hover:bg-neutral-100">کپی آدرس صفحه</button>
     </div>
   </footer>
@@ -55,13 +101,22 @@
     const QR_SIZE = 148;
     let VIDEO_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4"; // پیش‌فرض
 
+    // ——— لیست ویدیوها با دسته‌بندی ———
+    const videos = [
+      { category: "mix_master", title: "Mix and Master Sample", url: "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4" },
+      { category: "sound_design", title: "Sound Design Demo", url: "https://example.com/sound-design.mp4" },
+      { category: "producer_project", title: "Producer Project 1", url: "https://example.com/producer-project.mp4" },
+      { category: "sound_recording", title: "Sound Recording Session", url: "https://example.com/sound-recording.mp4" }
+    ];
+
     // ——— کمک‌ها ———
     const logEl = document.getElementById("log");
     function log(...args) { logEl.textContent += args.join(" ") + "\n"; }
-    
+
     function makeQRWithLib(container, text) {
       try {
         if (typeof QRCode === "function") {
+          container.innerHTML = "";
           new QRCode(container, { text, width: QR_SIZE, height: QR_SIZE });
           const img = container.querySelector("img");
           if (!img) {
@@ -70,13 +125,13 @@
               const i = new Image();
               i.src = canvas.toDataURL("image/png");
               i.width = QR_SIZE; i.height = QR_SIZE;
-              i.className = "rounded border";
+              i.className = "rounded border qr-hover";
               container.innerHTML = "";
               container.appendChild(i);
             }
           } else {
             img.width = QR_SIZE; img.height = QR_SIZE;
-            img.className = "rounded border";
+            img.className = "rounded border qr-hover";
           }
           return true;
         }
@@ -90,7 +145,7 @@
       img.src = url;
       img.width = QR_SIZE; img.height = QR_SIZE;
       img.alt = "QR";
-      img.className = "rounded border";
+      img.className = "rounded border qr-hover";
       container.innerHTML = "";
       container.appendChild(img);
       return img;
@@ -101,11 +156,8 @@
     document.getElementById("print").onclick = () => window.print();
     document.getElementById("copy").onclick = () => navigator.clipboard.writeText(location.href);
 
-    log("PAGE_URL =", location.href);
-    log("VIDEO_URL =", VIDEO_URL);
-
     // ——— تابع برای به‌روزرسانی کارت ———
-    function updateCard(videoUrl) {
+    function updateCard(videoUrl, title = "ویدیو") {
       const card = document.getElementById("card");
       card.innerHTML = ""; // پاک کردن محتوای قبلی
 
@@ -114,7 +166,7 @@
       const vid = document.createElement("video");
       vid.controls = true;
       vid.preload = "metadata";
-      vid.className = "w-full h-60 object-contain bg-black";
+      vid.className = "w-full h-80 object-contain bg-black rounded-t-2xl";
       const src = document.createElement("source");
       src.src = videoUrl; src.type = "video/mp4";
       vid.appendChild(src);
@@ -134,32 +186,33 @@
 
       // ——— بدنه + QR ———
       const body = document.createElement("div");
-      body.className = "p-4";
+      body.className = "p-6";
       body.innerHTML = `
-        <div class="font-semibold text-base">ویدیو</div>
-        <div class="mt-2 text-xs text-neutral-600 break-all">
-          لینک مستقیم: <a class="underline text-blue-600" href="${videoUrl}" target="_blank" rel="noreferrer">${videoUrl}</a>
+        <div class="font-semibold text-lg">${title}</div>
+        <div class="mt-2 text-sm text-neutral-600 break-all">
+          لینک مستقیم: <a class="underline text-blue-600 hover:text-blue-800" href="${videoUrl}" target="_blank" rel="noreferrer">${videoUrl}</a>
         </div>
       `;
       const row = document.createElement("div");
-      row.className = "mt-4 flex items-center gap-3";
+      row.className = "mt-4 flex items-center gap-4";
 
       const qrBox = document.createElement("div");
       qrBox.id = "qrBox";
+      qrBox.className = "relative";
       row.appendChild(qrBox);
 
       const actions = document.createElement("div");
-      actions.className = "flex flex-col gap-2";
+      actions.className = "flex flex-col gap-3";
       const open = document.createElement("a");
-      open.className = "px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90 inline-block";
-      open.href = videoUrl; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
+      open.className = "px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition";
+      open.href = videoUrl; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "باز کردن";
       const copyBtn = document.createElement("button");
-      copyBtn.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100";
-      copyBtn.textContent = "Copy Link";
+      copyBtn.className = "px-4 py-2 rounded border text-sm hover:bg-neutral-100 transition";
+      copyBtn.textContent = "کپی لینک";
       copyBtn.onclick = () => navigator.clipboard.writeText(videoUrl);
       const dl = document.createElement("a");
-      dl.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100 inline-block";
-      dl.textContent = "Download QR";
+      dl.className = "px-4 py-2 rounded border text-sm hover:bg-neutral-100 transition";
+      dl.textContent = "دانلود QR";
       dl.id = "dlQR";
       actions.append(open, copyBtn, dl);
       row.appendChild(actions);
@@ -169,35 +222,85 @@
 
       // ——— ساخت QR ———
       let qrImgElement = null;
-      const ok = makeQRWithLib(qrBox, videoUrl);
-      if (ok) {
-        log("QR: ساخته شد با qrcodejs");
-        qrImgElement = qrBox.querySelector("img") || qrBox.querySelector("canvas");
-      } else {
-        log("QR: فالبک آنلاین (img) فعال شد");
-        qrImgElement = makeQRFallbackIMG(qrBox, videoUrl);
-      }
+      qrBox.innerHTML = "<span class='loading'>در حال تولید QR...</span>";
+      setTimeout(() => {
+        const ok = makeQRWithLib(qrBox, videoUrl);
+        if (ok) {
+          qrImgElement = qrBox.querySelector("img") || qrBox.querySelector("canvas");
+        } else {
+          qrImgElement = makeQRFallbackIMG(qrBox, videoUrl);
+        }
 
-      // لینک دانلود QR
-      const dlLink = document.getElementById("dlQR");
-      if (qrImgElement.tagName.toLowerCase() === "img" && qrImgElement.src.startsWith("data:")) {
-        dlLink.href = qrImgElement.src;
-      } else {
-        dlLink.href = qrImgElement.src || videoUrl;
-      }
-      dlLink.download = "video-qr.png";
+        // لینک دانلود QR
+        const dlLink = document.getElementById("dlQR");
+        if (qrImgElement.tagName.toLowerCase() === "img" && qrImgElement.src.startsWith("data:")) {
+          dlLink.href = qrImgElement.src;
+        } else {
+          dlLink.href = qrImgElement.src || videoUrl;
+        }
+        dlLink.download = `${title.replace(/\s+/g, '_')}-qr.png`;
+      }, 500);
     }
 
-    // ——— رویداد برای فرم ———
+    // ——— تابع برای پرینت همه QRها ———
+    function generateAllQRs() {
+      const allQrs = document.getElementById("all-qrs");
+      allQrs.innerHTML = "";
+      allQrs.className = "mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 animate-slideIn";
+
+      videos.forEach((video, index) => {
+        const qrCard = document.createElement("div");
+        qrCard.className = "bg-white p-4 rounded-lg shadow-md text-center";
+        qrCard.innerHTML = `<div class="font-semibold text-sm mb-2">${video.title}</div>`;
+        const qrBox = document.createElement("div");
+        qrBox.id = `qr-all-${index}`;
+        qrBox.className = "relative mx-auto";
+        qrCard.appendChild(qrBox);
+        allQrs.appendChild(qrCard);
+
+        setTimeout(() => {
+          const ok = makeQRWithLib(qrBox, video.url);
+          if (!ok) {
+            makeQRFallbackIMG(qrBox, video.url);
+          }
+        }, 100 * index);
+      });
+
+      allQrs.classList.remove("hidden");
+    }
+
+    // ——— رویدادها ———
     document.getElementById("generateQR").onclick = () => {
       const videoUrlInput = document.getElementById("videoUrl").value;
       if (videoUrlInput) {
         VIDEO_URL = videoUrlInput;
         log("NEW_VIDEO_URL =", VIDEO_URL);
-        updateCard(VIDEO_URL);
+        updateCard(VIDEO_URL, "ویدیوی سفارشی");
+        document.getElementById("all-qrs").classList.add("hidden");
       } else {
         log("لطفاً لینک ویدیوی معتبر وارد کنید.");
       }
+    };
+
+    document.getElementById("category").onchange = (e) => {
+      const category = e.target.value;
+      if (category === "all") {
+        updateCard(VIDEO_URL);
+        document.getElementById("all-qrs").classList.add("hidden");
+        return;
+      }
+      const video = videos.find(v => v.category === category);
+      if (video) {
+        VIDEO_URL = video.url;
+        log("CATEGORY_VIDEO_URL =", VIDEO_URL);
+        updateCard(VIDEO_URL, video.title);
+        document.getElementById("all-qrs").classList.add("hidden");
+      }
+    };
+
+    document.getElementById("print-all").onclick = () => {
+      generateAllQRs();
+      setTimeout(() => window.print(), 1000);
     };
 
     // ——— بارگذاری اولیه ———
