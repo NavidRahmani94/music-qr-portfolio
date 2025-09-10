@@ -1,39 +1,49 @@
 /* ====== تنظیمات ====== */
-const CHANNEL_HANDLE = "@harsh_beatz5314";   // ← فقط همینو عوض کن اگر هندل تغییر کرد
+const CHANNEL_HANDLE = "@harsh_beatz5314"; // ← هندل کانال
 
-/* ====== ابزارهای کمکی ====== */
-// URL پایه برای GitHub Pages: https://<user>.github.io/<repo>/
+/* ====== ابزار ====== */
+const logEl = document.getElementById("log");
+function log(...args){ try{ logEl.textContent += args.join(" ") + "\n"; }catch(_){} }
+
 function getBaseURL() {
   const { protocol, host, pathname } = window.location;
   const parts = pathname.split("/").filter(Boolean);
+  // اگر روی GitHub Pages هستی، parts[0] اسم ریپو است
   return parts.length >= 1 ? `${protocol}//${host}/${parts[0]}/` : `${protocol}//${host}/`;
 }
 const BASE = getBaseURL();
 
-// امن‌سازی متن
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* ====== مرحله ۱: اگر ?id=... وجود دارد، ریدایرکت ====== */
+/* ====== 1) ریدایرکت بر اساس ?id=... ====== */
 (async function redirectIfNeeded() {
   const params = new URLSearchParams(location.search);
   const id = params.get("id");
   if (!id) return;
-  const map = await buildLinkMap();           // { videoId: url }
-  const target = map[id];
   const notice = document.getElementById("notice");
-  if (target) {
+  try {
+    const map = await buildLinkMap();
+    log("[redirect] map keys:", Object.keys(map).length);
+    const target = map[id];
+    if (target) {
+      notice?.classList.remove("hidden");
+      notice && (notice.innerText = "در حال انتقال به لینک مقصد...");
+      setTimeout(() => location.replace(target), 200);
+    } else {
+      notice?.classList.remove("hidden");
+      notice && (notice.innerText = "شناسه‌ی لینک پیدا نشد.");
+      log("[redirect] id not found:", id);
+    }
+  } catch (e) {
+    log("[redirect] ERROR:", e?.message || e);
     notice?.classList.remove("hidden");
-    notice && (notice.innerText = "در حال انتقال به لینک مقصد...");
-    setTimeout(() => location.replace(target), 200);
-  } else {
-    notice?.classList.remove("hidden");
-    notice && (notice.innerText = "شناسه‌ی لینک پیدا نشد.");
+    notice && (notice.innerText = "خطا در ریدایرکت.");
   }
 })();
 
-/* ====== مرحله ۲: ساخت لیست QR ====== */
+/* ====== 2) لیست QR ====== */
 const qrList   = document.getElementById("qrList");
 const emptyEl  = document.getElementById("empty");
 const searchEl = document.getElementById("searchInput");
@@ -41,24 +51,52 @@ const copyBtn  = document.getElementById("copyBtn");
 const printBtn = document.getElementById("printBtn");
 const metaEl   = document.getElementById("meta");
 
-let ALL = [];   // { slug: videoId, title, url }
+let ALL = [];   // {slug,title,url}
 let filtered = [];
+
+window.addEventListener("error", (e)=> log("[window.error]", e.message));
+window.addEventListener("unhandledrejection", (e)=> log("[promise.reject]", e.reason?.message || e.reason));
 
 init();
 
 async function init() {
-  const { channelId, title: channelTitle } = await resolveChannelIdFromHandle(CHANNEL_HANDLE);
-  if (!channelId) {
-    metaEl.innerHTML = `<span class="text-red-600">Channel ID پیدا نشد. هندل را چک کن.</span>`;
-    return;
+  try {
+    metaEl.textContent = "در حال یافتن Channel ID ...";
+    const { channelId, title: channelTitle } = await resolveChannelIdFromHandle(CHANNEL_HANDLE);
+    log("[init] resolved channelId:", channelId, "title:", channelTitle);
+
+    if (!channelId) {
+      metaEl.innerHTML = `<span class="text-red-600">Channel ID پیدا نشد. هندل را چک کن.</span>`;
+      // fallback: حداقل یک لینک نمونه‌ی کاربر
+      ALL = [
+        { slug: "D5kJ3z4F30g", title: "Sample (fallback)", url: "https://www.youtube.com/watch?v=D5kJ3z4F30g" }
+      ];
+      filtered = [...ALL];
+      render();
+      return;
+    }
+
+    metaEl.textContent = `Channel: ${channelTitle || CHANNEL_HANDLE} • ID: ${channelId}`;
+    const arr = await fetchVideosByChannelId(channelId);
+    log("[init] rss items:", arr.length);
+
+    if (!arr.length) {
+      metaEl.innerHTML += " • <span class='text-amber-600'>RSS آیتمی نیاورد (ممکنه موقت باشه).</span>";
+      // fallback حداقلی
+      ALL = [
+        { slug: "D5kJ3z4F30g", title: "Sample (fallback)", url: "https://www.youtube.com/watch?v=D5kJ3z4F30g" }
+      ];
+    } else {
+      ALL = arr;
+    }
+    filtered = [...ALL];
+    render();
+  } catch (e) {
+    log("[init] ERROR:", e?.message || e);
+    metaEl.innerHTML = `<span class="text-red-600">خطا در بارگذاری. صفحه را یک بار با Ctrl+F5 رفرش کن.</span>`;
   }
-  metaEl.textContent = `Channel: ${channelTitle || CHANNEL_HANDLE} • ID: ${channelId}`;
-  ALL = await fetchVideosByChannelId(channelId);
-  filtered = [...ALL];
-  render();
 }
 
-// جستجو/کپی/پرینت
 searchEl?.addEventListener("input", (e) => {
   const q = e.target.value.trim().toLowerCase();
   filtered = ALL.filter(x => [x.slug, x.title, x.url].join(" ").toLowerCase().includes(q));
@@ -67,33 +105,32 @@ searchEl?.addEventListener("input", (e) => {
 copyBtn?.addEventListener("click", () => navigator.clipboard.writeText(location.href));
 printBtn?.addEventListener("click", () => window.print());
 
-/* ====== به‌دست آوردن Channel ID از روی Handle (بدون CORS مشکل) ======
-   از r.jina.ai به‌عنوان reader/proxy رایگان استفاده می‌کنیم.
-   - صفحه‌ی کانال به‌صورت HTML برمی‌گرده و داخلش channelId وجود دارد.
+/* ====== گرفتن Channel ID از روی هندل ======
+   از r.jina.ai استفاده می‌کنیم تا CORS مزاحم نشه.
 */
 async function resolveChannelIdFromHandle(handle) {
   try {
-    const url = `https://r.jina.ai/http://www.youtube.com/${encodeURIComponent(handle)}`;
+    const url = `https://r.jina.ai/https://www.youtube.com/${encodeURIComponent(handle)}`;
     const res = await fetch(url);
     const text = await res.text();
-    // ساده‌ترین راه: جستجوی "channelId":"UC..."
-    const m = text.match(/\"channelId\"\\s*:\\s*\"(UC[\\w-]{20,})\"/);
-    const t = text.match(/\"title\"\\s*:\\s*\"([^"]+)\"/);
+    // گزینه‌های مختلف برای استخراج:
+    // "channelId":"UCxxxx", "externalId":"UCxxxx", یا canonicalChannelId
+    let m = text.match(/"channelId"\\s*:\\s*"((?:UC|UC)[\\w-]{20,})"/);
+    if (!m) m = text.match(/"externalId"\\s*:\\s*"((?:UC)[\\w-]{20,})"/);
+    if (!m) m = text.match(/"canonicalChannelId"\\s*:\\s*"((?:UC)[\\w-]{20,})"/);
+    const t = text.match(/"title"\\s*:\\s*"([^"]+)"/);
     return { channelId: m ? m[1] : null, title: t ? t[1] : null };
   } catch (e) {
-    console.warn("resolveChannelIdFromHandle failed:", e);
+    log("[resolveChannelIdFromHandle] ERROR:", e?.message || e);
     return { channelId: null, title: null };
   }
 }
 
-/* ====== خواندن RSS کانال و ساخت لیست ======
-   RSS رسمی یوتیوب: /feeds/videos.xml?channel_id=...
-   توجه: معمولاً فقط جدیدترین چند ویدیو را برمی‌گرداند (حدود 10–15). */
+/* ====== خواندن RSS کانال ====== */
 async function fetchVideosByChannelId(channelId) {
   const list = [];
   try {
-    const rss = `http://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
-    // با r.jina.ai بخوان برای دور زدن CORS
+    const rss = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`;
     const via = `https://r.jina.ai/${rss}`;
     const res = await fetch(via);
     const txt = await res.text();
@@ -108,7 +145,7 @@ async function fetchVideosByChannelId(channelId) {
       if (link && vid) list.push({ slug: vid, title, url: link });
     });
   } catch (e) {
-    console.warn("fetchVideosByChannelId failed:", e);
+    log("[fetchVideosByChannelId] ERROR:", e?.message || e);
   }
   // حذف تکراری‌ها
   const seen = new Set();
@@ -121,10 +158,11 @@ async function buildLinkMap() {
   const arr = channelId ? await fetchVideosByChannelId(channelId) : [];
   const map = {};
   arr.forEach(x => map[x.slug] = x.url);
+  log("[buildLinkMap] built:", Object.keys(map).length);
   return map;
 }
 
-/* ====== رندر کارت‌های QR ====== */
+/* ====== رندر ====== */
 function render() {
   qrList.innerHTML = "";
   if (!filtered.length) {
@@ -132,6 +170,7 @@ function render() {
     return;
   }
   emptyEl?.classList.add("hidden");
+
   filtered.forEach(item => {
     const card = document.createElement("div");
     card.className = "p-5 bg-white rounded-2xl border shadow-sm flex flex-col items-center justify-center gap-3";
