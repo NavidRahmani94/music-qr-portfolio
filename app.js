@@ -1,7 +1,9 @@
 /*********************** فقط این بخش را ویرایش کن ************************
- * هر ویدیو یک آیتم در RAW_VIDEOS است.
- * file = نام دقیق فایل در assets/videos/ (می‌تواند فاصله داشته باشد، مثلاً "logo M.mp4")
- * thumb = نام اختیاری کاور در assets/thumbs/
+ * هر ویدیو یک آیتم در RAW_VIDEOS:
+ *  - file  = نام دقیق فایل داخل assets/videos/ (می‌تواند فاصله داشته باشد، مثل "logo M.mp4")
+ *  - thumb = (اختیاری) نام کاور داخل assets/thumbs/
+ *  - slug  = نام کوتاه جهت دانلود QR (اختیاری)
+ *  - title = عنوان نمایشی کارت (اختیاری، پیش‌فرض همان نام فایل)
  ***********************************************************************/
 const RAW_VIDEOS = [
   { slug: "logo-m", title: "Logo Motion", file: "logo M.mp4", thumb: "logo M.jpg", tags: ["local","motion"] },
@@ -10,13 +12,13 @@ const RAW_VIDEOS = [
 ];
 /************************************************************************/
 
-// نام ریپو ثابت: مسیر پایه برای GitHub Pages
-const BASE = "/music-qr-portfolio"; // اگر نام ریپو تغییر کرد، این را هم تغییر بده
+/* مسیر پایه برای GitHub Pages — برای ریپوی شما ثابت است */
+const BASE = "/music-qr-portfolio"; // اگر اسم ریپو را عوض کردی، این را هم عوض کن
 
-// کمک: escape HTML
+/* ابزار کوچک: escape HTML */
 function esc(s){ return (s||"").replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-// از RAW_VIDEOS به ساختار نهایی تبدیل می‌کنیم (encode برای نام‌های با فاصله/کاراکتر خاص)
+/* از RAW_VIDEOS به ساختار نهایی تبدیل می‌کنیم (encode برای نام‌های با فاصله/کاراکتر خاص) */
 const VIDEOS = RAW_VIDEOS.map(v => {
   const fileEnc  = encodeURIComponent(v.file || "");
   const thumbEnc = v.thumb ? encodeURIComponent(v.thumb) : "";
@@ -29,14 +31,14 @@ const VIDEOS = RAW_VIDEOS.map(v => {
   };
 });
 
-// DOM
+/* DOM */
 const grid    = document.getElementById("grid");
 const empty   = document.getElementById("empty");
 const search  = document.getElementById("search");
 const copyBtn = document.getElementById("copy");
 const printBtn= document.getElementById("print");
 
-// رخدادها
+/* رخدادها */
 copyBtn?.addEventListener("click", ()=> navigator.clipboard.writeText(location.href));
 printBtn?.addEventListener("click", ()=> window.print());
 search?.addEventListener("input", (e)=>{
@@ -44,12 +46,12 @@ search?.addEventListener("input", (e)=>{
   render(VIDEOS.filter(v => [v.title, (v.tags||[]).join(" ")].join(" ").toLowerCase().includes(q)));
 });
 
-// شروع
+/* شروع */
 render(VIDEOS);
 
-// ————— توابع —————
+/* ————— توابع ————— */
 
-// QR را به صورت <img> برمی‌گرداند (قابل دانلود)
+/* ساخت QR به صورت <img> (قابل دانلود) */
 function makeQRImage(url, size=148){
   const tmp = document.createElement("div");
   new QRCode(tmp, { text: url, width: size, height: size }); // qrcode.min.js باید قبل از app.js لود شود
@@ -65,7 +67,7 @@ function makeQRImage(url, size=148){
   return imgEl;
 }
 
-// اگر QR <img> dataURL نداشت، تبدیلش می‌کنیم
+/* اگر QR <img> dataURL نداشت، تبدیلش می‌کنیم */
 function toDataURL(img){
   const canvas = document.createElement("canvas");
   canvas.width = img.width; canvas.height = img.height;
@@ -74,7 +76,7 @@ function toDataURL(img){
   return canvas.toDataURL("image/png");
 }
 
-// رندر کارت‌ها (پلیر داخلی + QR ثابت + دکمه دانلود)
+/* رندر کارت‌ها: پلیر داخلی + QR ثابت + دکمه دانلود */
 function render(list){
   grid.innerHTML = "";
   if(!list.length){ empty.classList.remove("hidden"); return; }
@@ -84,7 +86,7 @@ function render(list){
     const card = document.createElement("div");
     card.className = "overflow-hidden rounded-2xl shadow-sm hover:shadow transition bg-white border flex flex-col";
 
-    // مدیا: اگر MP4 است پلیر داخلی، وگرنه تصویر کاور لینک‌دار
+    /* مدیا: اگر MP4 است پلیر داخلی، وگرنه تصویر کاور لینک‌دار */
     const mediaWrap = document.createElement("div");
     mediaWrap.className = "relative";
     if (/\.mp4(\?|#|$)/i.test(v.url)) {
@@ -93,14 +95,14 @@ function render(list){
           <source src="${v.url}" type="video/mp4">
           مرورگر شما از ویدیو پشتیبانی نمی‌کند.
         </video>`;
-      // نمایش خطای پخش (کمک به عیب‌یابی)
+      /* نمایش خطای پخش (عیب‌یابی) */
       const vid = mediaWrap.querySelector("video");
       vid.addEventListener("error", () => {
         const err = vid.error, map = {1:"ABORTED",2:"NETWORK",3:"DECODE",4:"SRC_NOT_SUPPORTED"};
         const code = err?.code || 0;
         const warn = document.createElement("div");
         warn.className = "p-3 text-sm rounded bg-red-50 border text-red-700";
-        warn.textContent = `Video error code=${code} (${map[code]||"UNKNOWN"}) — مسیر/نام فایل یا کدک را چک کن.`;
+        warn.textContent = `Video error code=${code} (${map[code]||"UNKNOWN"}) — مسیر/نام فایل یا کُدک را چک کن.`;
         mediaWrap.appendChild(warn);
       });
     } else {
@@ -110,6 +112,7 @@ function render(list){
         </a>`;
     }
 
+    /* بدنه و اکشن‌ها */
     const body = document.createElement("div");
     body.className = "p-4 flex-1 flex flex-col";
     body.innerHTML = `
@@ -122,7 +125,7 @@ function render(list){
       </div>
     `;
 
-    // QR ثابت + دکمه‌ها
+    /* QR ثابت + دکمه‌ها */
     const qrRow = document.createElement("div");
     qrRow.className = "mt-4 flex items-center gap-3";
     const qrImg = makeQRImage(v.url, 148);
