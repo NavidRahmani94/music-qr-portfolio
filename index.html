@@ -11,12 +11,11 @@
   <!-- فونت فانتزی Lobster -->
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 
-  <!-- کتابخانه QR -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-          integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
   <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
     @media print { 
       #controls, #audio-controls, #banner-video-controls { display: none !important; } 
       #grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -30,7 +29,74 @@
     .animate-slideIn { animation: slideIn 0.5s ease-out; }
     /* انیمیشن بنر */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .banner { animation: fadeIn 1s ease-in; }
+    /* انیمیشن بورد فانتزی */
+    @keyframes fancyBorder {
+      0% { 
+        border-color: #4b5563; /* طوسی */
+        box-shadow: 0 0 10px rgba(75, 85, 99, 0.8), 
+                    0 0 20px rgba(127, 85, 57, 0.6), 
+                    0 0 30px rgba(75, 85, 99, 0.4);
+      }
+      33% { 
+        border-color: #7f5539; /* قهوه‌ای */
+        box-shadow: 0 0 15px rgba(127, 85, 57, 0.8), 
+                    0 0 25px rgba(75, 85, 99, 0.6), 
+                    0 0 35px rgba(127, 85, 57, 0.4);
+      }
+      66% { 
+        border-color: #6b7280; /* طوسی روشن */
+        box-shadow: 0 0 15px rgba(75, 85, 99, 0.8), 
+                    0 0 25px rgba(127, 85, 57, 0.6), 
+                    0 0 35px rgba(75, 85, 99, 0.4);
+      }
+      100% { 
+        border-color: #4b5563; /* بازگشت به طوسی */
+        box-shadow: 0 0 10px rgba(75, 85, 99, 0.8), 
+                    0 0 20px rgba(127, 85, 57, 0.6), 
+                    0 0 30px rgba(75, 85, 99, 0.4);
+      }
+    }
+    /* انیمیشن پالس برای باکس‌های عنوان */
+    @keyframes pulseGlow {
+      0% { 
+        box-shadow: 0 0 5px rgba(75, 85, 99, 0.5), 0 0 10px rgba(127, 85, 57, 0.3);
+        transform: scale(1);
+      }
+      50% { 
+        box-shadow: 0 0 15px rgba(75, 85, 99, 0.8), 0 0 20px rgba(127, 85, 57, 0.6);
+        transform: scale(1.05);
+      }
+      100% { 
+        box-shadow: 0 0 5px rgba(75, 85, 99, 0.5), 0 0 10px rgba(127, 85, 57, 0.3);
+        transform: scale(1);
+      }
+    }
+    .banner { 
+      animation: fadeIn 1s ease-in, fancyBorder 4s ease-in-out infinite;
+      border: 3px solid;
+      filter: brightness(1.1);
+      margin: 0;
+      background-image: url('https://navidrahmani94.github.io/music-qr-portfolio/assets/musical-background-with-piano-keys-microphone-space-text.jpg');
+      background-size: cover;
+      background-position: center;
+      background-color: #4b5563; /* فال‌بک طوسی */
+    }
+    /* باکس‌های عنوان */
+    .title-box {
+      background-color: #4b5563; /* طوسی */
+      border-radius: 8px;
+      padding: 8px 16px;
+      animation: pulseGlow 2s ease-in-out infinite;
+      color: white;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+    /* بورد پهن و مشخص برای باکس ویدیو */
+    .video-box {
+      border: 5px solid #4b5563; /* بورد پهن طوسی */
+      box-shadow: 0 0 15px rgba(75, 85, 99, 0.8), 0 0 25px rgba(127, 85, 57, 0.6);
+      animation: fancyBorder 4s ease-in-out infinite;
+      border-radius: 8px;
+    }
     /* افکت hover برای QR */
     .qr-hover:hover { transform: scale(1.05); transition: transform 0.3s ease; }
     /* انیمیشن بارگذاری QR */
@@ -40,70 +106,62 @@
       display: inline-block;
       width: 16px; height: 16px;
       border: 2px solid #fff;
-      border-top-color: #3b82f6;
+      border-top-color: #7f5539; /* قهوه‌ای */
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-left: 8px;
     }
     /* افکت فانتزی دکمه‌ها */
     @keyframes glow { 
-      0% { box-shadow: 0 0 5px rgba(255,255,255,0.5); } 
-      50% { box-shadow: 0 0 20px rgba(255,255,255,0.8); } 
-      100% { box-shadow: 0 0 5px rgba(255,255,255,0.5); } 
+      0% { box-shadow: 0 0 5px rgba(75, 85, 99, 0.5); } 
+      50% { box-shadow: 0 0 20px rgba(127, 85, 57, 0.8); } 
+      100% { box-shadow: 0 0 5px rgba(75, 85, 99, 0.5); } 
+    }
+    .fancy-btn {
+      background-image: linear-gradient(to right, #4b5563, #7f5539); /* گرادیان طوسی به قهوه‌ای */
     }
     .fancy-btn:hover {
       transform: scale(1.1);
       animation: glow 1.5s infinite;
+      background-image: linear-gradient(to right, #6b7280, #9c6644); /* گرادیان روشن‌تر */
     }
-    /* استایل ویدیو بنر */
+    /* استایل ویدیو در باکس انتهایی */
     #banner-video {
       width: 100%;
-      height: 100%;
+      height: auto;
+      max-height: 300px;
       object-fit: cover;
-      position: absolute;
-      top: 20%; /* جابجایی به پایین برای نمایش سر پیانیست */
-      left: 0;
-      z-index: -1;
     }
   </style>
 </head>
-<body style="background-image: url('https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/146291855-grunge-musical-background-old-paper-texture-music-notes.jpg'); background-size: cover; background-attachment: fixed;">
+<body style="background-image: url('https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/4172.jpg'); background-size: cover; background-attachment: fixed; margin: 0;">
   <!-- بنر -->
-  <header class="sticky top-0 z-10 text-white shadow-lg banner relative overflow-hidden h-64"> <!-- ارتفاع ثابت برای کنترل بهتر -->
-    <video id="banner-video" autoplay loop muted>
-      <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/Music is the most powerful art of humanity it is linked in heaven and earth at the same time.mp4" type="video/mp4">
-    </video>
+  <header class="fixed top-0 left-0 right-0 z-10 text-white shadow-lg banner relative overflow-hidden h-64">
     <div class="max-w-5xl mx-auto px-4 py-4 relative h-full">
       <div id="controls" class="flex justify-center items-center gap-3 h-full">
-        <div class="flex flex-col items-center gap-1">
-          <span class="text-2xl font-bold">Producer Portfolio</span>
-          <span class="text-xl font-medium">Navid Rahmani</span>
+        <div class="flex flex-col items-center gap-2">
+          <div class="title-box text-2xl font-bold">Producer Portfolio</div>
+          <div class="title-box text-xl font-medium">Navid Rahmani</div>
         </div>
       </div>
-      <div class="absolute left-4 top-1/2 transform -translate-y-1/2">
-        <button id="print" class="border border-white/20 rounded px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition fancy-btn flex items-center gap-2">
-          <span>🖨️</span>
-          <span>Print QR</span>
-        </button>
-      </div>
-      <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
-        <a href="https://www.linkedin.com/in/navid-rahmani-8388182b0/" target="_blank" rel="noreferrer" class="border border-white/20 rounded px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition fancy-btn flex items-center">
+      <div class="absolute left-4 bottom-4">
+        <a href="https://www.linkedin.com/in/navid-rahmani-8388182b0/" target="_blank" rel="noreferrer" class="border border-white/20 rounded px-4 py-2 text-sm bg-gradient-to-r from-gray-600 to-amber-800 hover:from-gray-500 hover:to-amber-700 transition fancy-btn flex items-center">
           <img src="https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/hd-linkedin-blue-official-logo-png-701751694779201bpivk39ebc.png" alt="LinkedIn" class="w-6 h-6 rounded">
         </a>
       </div>
       <div id="banner-video-controls" class="absolute right-4 bottom-4">
-        <button id="toggle-banner-audio" class="px-2 py-1 rounded border border-white/40 bg-white/30 text-white text-sm hover:bg-white/40 transition">Mute Audio</button>
+        <button id="toggle-banner-audio" class="px-2 py-1 rounded border border-white/40 bg-gray-600 text-white text-sm hover:bg-gray-500 transition">Mute Audio</button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-5xl mx-auto px-4 py-8">
+  <main class="max-w-5xl mx-auto px-4 py-8 mt-16">
     <!-- دکمه‌های دسته‌بندی -->
     <div id="category-buttons" class="mb-6 flex flex-col md:flex-row justify-center gap-2">
-      <button class="category-btn px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded hover:from-blue-600 hover:to-indigo-600 transition fancy-btn fancy-font text-base md:text-lg" data-category="mix_master">Mix and Master</button>
-      <button class="category-btn px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded hover:from-blue-600 hover:to-indigo-600 transition fancy-btn fancy-font text-base md:text-lg" data-category="sound_design">Sound Design</button>
-      <button class="category-btn px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded hover:from-blue-600 hover:to-indigo-600 transition fancy-btn fancy-font text-base md:text-lg" data-category="producer_project">Producer Project</button>
-      <button class="category-btn px-3 py-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded hover:from-blue-600 hover:to-indigo-600 transition fancy-btn fancy-font text-base md:text-lg" data-category="sound_recording">Sound Recording</button>
+      <button class="category-btn px-3 py-1.5 text-white rounded transition fancy-btn fancy-font text-base md:text-lg" data-category="mix_master">Mix and Master</button>
+      <button class="category-btn px-3 py-1.5 text-white rounded transition fancy-btn fancy-font text-base md:text-lg" data-category="sound_design">Sound Design</button>
+      <button class="category-btn px-3 py-1.5 text-white rounded transition fancy-btn fancy-font text-base md:text-lg" data-category="producer_project">Producer Project</button>
+      <button class="category-btn px-3 py-1.5 text-white rounded transition fancy-btn fancy-font text-base md:text-lg" data-category="sound_recording">Sound Recording</button>
     </div>
 
     <!-- کارت -->
@@ -111,15 +169,24 @@
 
     <!-- بخش پرینت همه QRها -->
     <div id="all-qrs" class="hidden mt-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+
+    <!-- باکس ویدیو در انتهای صفحه -->
+    <div class="max-w-5xl mx-auto px-4 py-8">
+      <div class="video-box">
+        <video id="banner-video" autoplay loop muted controls>
+          <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/Music is the most powerful art of humanity it is linked in heaven and earth at the same time.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
   </main>
 
   <footer class="border-t bg-white/70 backdrop-blur-sm">
     <div class="max-w-5xl mx-auto px-4 py-6 text-xs text-neutral-500 flex items-center justify-between">
       <div>© <span id="year"></span> Navid Rahmani: Producer Portfolio</div>
       <div id="audio-controls" class="flex items-center gap-2">
-        <button id="toggle-audio" class="px-2 py-1 rounded hover:bg-neutral-100">Pause Audio</button>
+        <button id="toggle-audio" class="px-2 py-1 rounded hover:bg-gray-200">Pause Audio</button>
       </div>
-      <button id="copy" class="px-2 py-1 rounded hover:bg-neutral-100">Copy Page URL</button>
+      <button id="copy" class="px-2 py-1 rounded hover:bg-gray-200">Copy Page URL</button>
     </div>
     <audio id="background-audio" autoplay loop>
       <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/background.mp3" type="audio/mp4">
@@ -203,7 +270,6 @@
 
     // ——— UI ابتدایی ———
     document.getElementById("year").textContent = new Date().getFullYear();
-    document.getElementById("print").onclick = () => window.print();
     document.getElementById("copy").onclick = () => navigator.clipboard.writeText(location.href);
 
     // ——— کنترل موسیقی پس‌زمینه ———
@@ -220,7 +286,7 @@
       }
     };
 
-    // ——— کنترل صدای ویدیوی بنر ———
+    // ——— کنترل صدای ویدیوی باکس انتهایی ———
     const toggleBannerAudioBtn = document.getElementById("toggle-banner-audio");
     let isBannerMuted = false;
     toggleBannerAudioBtn.onclick = () => {
@@ -288,10 +354,10 @@
       const actions = document.createElement("div");
       actions.className = "flex flex-col md:flex-row gap-3";
       const open = document.createElement("a");
-      open.className = "px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition";
+      open.className = "px-4 py-2 rounded bg-gradient-to-r from-gray-600 to-amber-800 text-white text-sm hover:from-gray-500 hover:to-amber-700 transition";
       open.href = videoUrl; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
       const copyBtn = document.createElement("button");
-      copyBtn.className = "px-4 py-2 rounded border text-sm hover:bg-neutral-100 transition";
+      copyBtn.className = "px-4 py-2 rounded border text-sm hover:bg-gray-200 transition";
       copyBtn.textContent = "Copy Link";
       copyBtn.onclick = () => navigator.clipboard.writeText(videoUrl);
       actions.append(open, copyBtn);
