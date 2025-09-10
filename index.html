@@ -8,7 +8,7 @@
   <!-- TailwindCSS از CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- کتابخانهٔ QR (باید قبل از app.js لود شود) -->
+  <!-- کتابخانهٔ QR — باید قبل از app.js لود شود -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
           integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g=="
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -49,8 +49,6 @@
 
   <!-- اسکریپت اصلی پروژه -->
   <script src="app.js"></script>
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
