@@ -15,7 +15,7 @@ const VIDEOS = [
   {
     slug: "my-track",
     title: "My Track (Local MP4)",
-    url: `${BASE}/assets/videos/my-track.mp4`,          // ← نام فایل خودت
+    url: `${BASE}/assets/videos/logo M.mp4`,          // ← نام فایل خودت
     thumbnail: `${BASE}/assets/thumbs/my-track.jpg`,    // ← اختیاری
     tags: ["studio","2025"]
   },
