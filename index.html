@@ -1,13 +1,9 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="app.js"></script>
-
-
 <!doctype html>
 <html lang="fa">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ویدیوها + QR (لوکال)</title>
+  <title>ویدیوهای من + QR (لوکال)</title>
 
   <!-- Tailwind via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -44,6 +40,7 @@
     </div>
   </footer>
 
+  <!-- مهم: qrcode.min.js باید قبل از app.js لود شود -->
   <script src="app.js"></script>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
