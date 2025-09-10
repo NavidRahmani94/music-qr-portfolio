@@ -3,12 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ویدیو + QR (تک‌فایل)</title>
+  <title>ویدیو + QR (با فالبک تضمینی)</title>
+
+  <!-- استایل ساده -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- کتابخانهٔ QR -->
+
+  <!-- کتابخانهٔ QR (اگر هر دلیلی لود نشه، پایین فالبک داریم) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
           integrity="sha512-CNgI+PvfSaH0YzZp0yDW8s0kL9sZf1R8Q9vuuqUj5hT1o4d7q9gH9B2v3F9zj7+zVQhVYt8NwS1f+7x7YkBv3g=="
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
   <style>
     @media print { #controls{display:none!important} #grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
     .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
@@ -17,7 +21,7 @@
 <body class="bg-neutral-50 text-neutral-900">
   <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b">
     <div id="controls" class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-      <div class="font-bold text-lg">🎬 ویدیو لوکال + QR (تک‌فایل)</div>
+      <div class="font-bold text-lg">🎬 ویدیو + QR</div>
       <div class="ml-auto">
         <button id="print" class="border rounded px-3 py-2 text-sm hover:bg-neutral-100">پرینت QR</button>
       </div>
@@ -25,8 +29,10 @@
   </header>
 
   <main class="max-w-5xl mx-auto px-4 py-8">
+    <!-- لاگ برای عیب‌یابی -->
     <pre id="log" class="mono text-xs bg-white border rounded p-3 mb-4 whitespace-pre-wrap"></pre>
 
+    <!-- کارت -->
     <div id="card" class="overflow-hidden rounded-2xl shadow-sm bg-white border flex flex-col"></div>
   </main>
 
@@ -38,35 +44,77 @@
   </footer>
 
   <script>
-  const ABS_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4";
+  // ——— تنظیمات شما ———
+  const VIDEO_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4";
+  const QR_SIZE = 148;
 
+  // ——— کمک‌ها ———
   const logEl = document.getElementById("log");
-  function log(msg){ logEl.textContent += msg + "\\n"; }
-  log("PAGE_URL = " + location.href);
-  log("VIDEO_URL = " + ABS_URL);
+  function log(...args){ logEl.textContent += args.join(" ") + "\n"; }
+  function makeQRWithLib(container, text) {
+    try {
+      if (typeof QRCode === "function") {
+        new QRCode(container, { text, width: QR_SIZE, height: QR_SIZE });
+        // اگر خروجی <canvas> بود به <img> تبدیلش کنیم تا دکمهٔ دانلود داشته باشیم
+        const img = container.querySelector("img");
+        if (!img) {
+          const canvas = container.querySelector("canvas");
+          if (canvas) {
+            const i = new Image();
+            i.src = canvas.toDataURL("image/png");
+            i.width = QR_SIZE; i.height = QR_SIZE;
+            i.className = "rounded border";
+            container.innerHTML = "";
+            container.appendChild(i);
+          }
+        } else {
+          img.width = QR_SIZE; img.height = QR_SIZE;
+          img.className = "rounded border";
+        }
+        return true;
+      }
+    } catch(e){ log("QR lib error:", e.message); }
+    return false;
+  }
+  function makeQRFallbackIMG(container, text) {
+    const url = "https://api.qrserver.com/v1/create-qr-code/?size="
+                + QR_SIZE + "x" + QR_SIZE + "&data="
+                + encodeURIComponent(text);
+    const img = new Image();
+    img.src = url;
+    img.width = QR_SIZE; img.height = QR_SIZE;
+    img.alt = "QR";
+    img.className = "rounded border";
+    container.innerHTML = "";
+    container.appendChild(img);
+    return img;
+  }
 
+  // ——— UI ابتدایی ———
   document.getElementById("year").textContent = new Date().getFullYear();
   document.getElementById("print").onclick = () => window.print();
   document.getElementById("copy").onclick  = () => navigator.clipboard.writeText(location.href);
 
+  log("PAGE_URL =", location.href);
+  log("VIDEO_URL =", VIDEO_URL);
+
   const card = document.getElementById("card");
 
-  // مدیا (پلیر ویدیو)
+  // ——— ویدیو ———
   const media = document.createElement("div");
   const vid = document.createElement("video");
   vid.controls = true;
   vid.preload = "metadata";
   vid.className = "w-full h-60 object-contain bg-black";
   const src = document.createElement("source");
-  src.src = ABS_URL; src.type = "video/mp4";
+  src.src = VIDEO_URL; src.type = "video/mp4";
   vid.appendChild(src);
   media.appendChild(vid);
   card.appendChild(media);
 
-  // لاگ خطای پخش (درصورت وجود)
+  // اگر پخش خطا داشت، پیام بده
   vid.addEventListener("error", ()=>{
-    const err = vid.error;
-    const map = {1:"ABORTED",2:"NETWORK",3:"DECODE",4:"SRC_NOT_SUPPORTED"};
+    const err = vid.error, map = {1:"ABORTED",2:"NETWORK",3:"DECODE",4:"SRC_NOT_SUPPORTED"};
     const code = err?.code || 0;
     log("VIDEO_ERROR code=" + code + " (" + (map[code]||"UNKNOWN") + ")");
     const warn = document.createElement("div");
@@ -75,43 +123,64 @@
     media.appendChild(warn);
   });
 
-  // بدنه + QR
+  // ——— بدنه + QR ———
   const body = document.createElement("div");
   body.className = "p-4";
   body.innerHTML = `
     <div class="font-semibold text-base">ویدیو</div>
     <div class="mt-2 text-xs text-neutral-600 break-all">
-      لینک مستقیم: <a class="underline text-blue-600" href="${ABS_URL}" target="_blank" rel="noreferrer">${ABS_URL}</a>
+      لینک مستقیم: <a class="underline text-blue-600" href="${VIDEO_URL}" target="_blank" rel="noreferrer">${VIDEO_URL}</a>
     </div>
   `;
   const row = document.createElement("div");
   row.className = "mt-4 flex items-center gap-3";
-  const tmp = document.createElement("div");
-  new QRCode(tmp, { text: ABS_URL, width: 148, height: 148 });
-  let qrImg = tmp.querySelector("img");
-  if (!qrImg) {
-    const canvas = tmp.querySelector("canvas");
-    qrImg = new Image();
-    qrImg.src = canvas.toDataURL("image/png");
-  }
-  qrImg.width = 148; qrImg.height = 148; qrImg.className = "rounded border";
+
+  const qrBox = document.createElement("div");
+  qrBox.id = "qrBox";
+  row.appendChild(qrBox);
+
   const actions = document.createElement("div");
   actions.className = "flex flex-col gap-2";
   const open = document.createElement("a");
   open.className = "px-3 py-2 rounded bg-black text-white text-sm hover:opacity-90 inline-block";
-  open.href = ABS_URL; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
+  open.href = VIDEO_URL; open.target = "_blank"; open.rel = "noreferrer"; open.textContent = "Open";
   const copyBtn = document.createElement("button");
   copyBtn.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100";
   copyBtn.textContent = "Copy Link";
-  copyBtn.onclick = ()=> navigator.clipboard.writeText(ABS_URL);
+  copyBtn.onclick = ()=> navigator.clipboard.writeText(VIDEO_URL);
   const dl = document.createElement("a");
   dl.className = "px-3 py-2 rounded border text-sm hover:bg-neutral-100 inline-block";
   dl.textContent = "Download QR";
-  dl.href = qrImg.src; dl.download = "video-qr.png";
+  dl.id = "dlQR";
   actions.append(open, copyBtn, dl);
-  row.append(qrImg, actions);
+  row.appendChild(actions);
+
   body.appendChild(row);
   card.appendChild(body);
+
+  // ——— ساخت QR با دو حالت: کتابخانه یا فالبک ———
+  let qrImgElement = null;
+  const ok = makeQRWithLib(qrBox, VIDEO_URL);
+  if (ok) {
+    log("QR: ساخته شد با qrcodejs");
+    qrImgElement = qrBox.querySelector("img") || qrBox.querySelector("canvas");
+    // اگر <canvas> بود، دانلود مستقیم تصویر نداریم؛ در makeQRWithLib به <img> تبدیل کردیم.
+  } else {
+    log("QR: فالبک آنلاین (img) فعال شد");
+    qrImgElement = makeQRFallbackIMG(qrBox, VIDEO_URL);
+  }
+
+  // لینک دانلود QR (اگر dataURL داریم از همان، وگرنه از src)
+  const dlLink = document.getElementById("dlQR");
+  if (qrImgElement.tagName.toLowerCase() === "img" && qrImgElement.src.startsWith("data:")) {
+    dlLink.href = qrImgElement.src;
+  } else {
+    // اگر عکس از سرویس آنلاین است، همان src را برای دانلود می‌گذاریم
+    dlLink.href = qrImgElement.src || VIDEO_URL;
+  }
+  dlLink.download = "video-qr.png";
   </script>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
