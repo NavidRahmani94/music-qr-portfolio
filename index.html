@@ -18,7 +18,7 @@
 
   <style>
     @media print { 
-      #controls, #audio-controls { display: none !important; } 
+      #controls, #audio-controls, #banner-video-controls { display: none !important; } 
       #grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       #all-qrs { display: none !important; }
     }
@@ -55,23 +55,26 @@
       transform: scale(1.1);
       animation: glow 1.5s infinite;
     }
-    /* استایل هدر با تصویر پس‌زمینه */
-    header {
-      background-image: url('https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/sound-wave-waves.gif');
-      background-size: cover;
-      background-position: center;
-      background-blend-mode: overlay;
-    }
-    header .banner {
-      background: linear-gradient(to right, rgba(59, 130, 246, 0.7), rgba(99, 102, 241, 0.7));
+    /* استایل ویدیو بنر */
+    #banner-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 20%; /* جابجایی به پایین برای نمایش سر پیانیست */
+      left: 0;
+      z-index: -1;
     }
   </style>
 </head>
 <body style="background-image: url('https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/146291855-grunge-musical-background-old-paper-texture-music-notes.jpg'); background-size: cover; background-attachment: fixed;">
   <!-- بنر -->
-  <header class="sticky top-0 z-10 text-white shadow-lg banner">
-    <div class="max-w-5xl mx-auto px-4 py-4 relative">
-      <div id="controls" class="flex justify-center items-center gap-3">
+  <header class="sticky top-0 z-10 text-white shadow-lg banner relative overflow-hidden h-64"> <!-- ارتفاع ثابت برای کنترل بهتر -->
+    <video id="banner-video" autoplay loop muted>
+      <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/Music is the most powerful art of humanity it is linked in heaven and earth at the same time.mp4" type="video/mp4">
+    </video>
+    <div class="max-w-5xl mx-auto px-4 py-4 relative h-full">
+      <div id="controls" class="flex justify-center items-center gap-3 h-full">
         <div class="flex flex-col items-center gap-1">
           <span class="text-2xl font-bold">Producer Portfolio</span>
           <span class="text-xl font-medium">Navid Rahmani</span>
@@ -87,6 +90,9 @@
         <a href="https://www.linkedin.com/in/navid-rahmani-8388182b0/" target="_blank" rel="noreferrer" class="border border-white/20 rounded px-4 py-2 text-sm bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 transition fancy-btn flex items-center">
           <img src="https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/hd-linkedin-blue-official-logo-png-701751694779201bpivk39ebc.png" alt="LinkedIn" class="w-6 h-6 rounded">
         </a>
+      </div>
+      <div id="banner-video-controls" class="absolute right-4 bottom-4">
+        <button id="toggle-banner-audio" class="px-2 py-1 rounded border border-white/40 bg-white/30 text-white text-sm hover:bg-white/40 transition">Mute Audio</button>
       </div>
     </div>
   </header>
@@ -116,7 +122,7 @@
       <button id="copy" class="px-2 py-1 rounded hover:bg-neutral-100">Copy Page URL</button>
     </div>
     <audio id="background-audio" autoplay loop>
-      <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/background.mp3" type="audio/mp3">
+      <source src="https://navidrahmani94.github.io/music-qr-portfolio/assets/background.mp3" type="audio/mp4">
     </audio>
   </footer>
 
@@ -124,6 +130,7 @@
     // ——— تنظیمات اولیه ———
     const QR_SIZE = 148;
     let VIDEO_URL = "https://navidrahmani94.github.io/music-qr-portfolio/assets/videos/logo%20M.mp4"; // پیش‌فرض
+    const bannerVideo = document.getElementById("banner-video");
 
     // ——— لیست ویدیوها با دسته‌بندی و توضیحات ———
     const videos = [
@@ -213,6 +220,15 @@
       }
     };
 
+    // ——— کنترل صدای ویدیوی بنر ———
+    const toggleBannerAudioBtn = document.getElementById("toggle-banner-audio");
+    let isBannerMuted = false;
+    toggleBannerAudioBtn.onclick = () => {
+      isBannerMuted = !isBannerMuted;
+      bannerVideo.muted = isBannerMuted;
+      toggleBannerAudioBtn.textContent = isBannerMuted ? "Unmute Audio" : "Mute Audio";
+    };
+
     // ——— تابع برای به‌روزرسانی کارت ———
     function updateCard(videoUrl, title = "Video", description = "") {
       const card = document.getElementById("card");
@@ -237,6 +253,14 @@
       card.appendChild(media);
 
       // اگر پخش خطا داشت، پیام بده
+      vid.addEventListener("play", () => {
+        bannerVideo.muted = true; // قطع صدا وقتی ویدیو کارت پخش می‌شود
+      });
+      vid.addEventListener("pause", () => {
+        if (!isBannerMuted) {
+          bannerVideo.muted = false; // برگرداندن صدا اگر مات نشده باشد
+        }
+      });
       vid.addEventListener("error", () => {
         const err = vid.error, map = {1:"ABORTED",2:"NETWORK",3:"DECODE",4:"SRC_NOT_SUPPORTED"};
         const code = err?.code || 0;
